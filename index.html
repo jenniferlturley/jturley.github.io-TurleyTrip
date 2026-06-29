@@ -1,0 +1,1989 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Turley Family Road Trip 2026 🗺️</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  :root {
+    --confirmed: #22c55e;
+    --flexible: #f59e0b;
+    --travel: #6366f1;
+    --hotel: #0ea5e9;
+    --food: #ec4899;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card2: #273548;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --border: #334155;
+    --accent: #38bdf8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; min-height: 100vh; }
+
+  /* NAV */
+  nav { background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 100; }
+  .nav-inner { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; max-width: 600px; margin: 0 auto; }
+  .nav-title { font-weight: 700; font-size: 1rem; color: var(--accent); }
+  .nav-tabs { display: flex; gap: 4px; }
+  .tab-btn { background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; transition: all 0.2s; }
+  .tab-btn.active { background: var(--accent); color: #0f172a; border-color: var(--accent); font-weight: 700; }
+
+  /* PAGES */
+  .page { display: none; max-width: 600px; margin: 0 auto; padding: 16px; }
+  .page.active { display: block; }
+
+  /* HERO */
+  .hero { border-radius: 16px; margin-bottom: 16px; text-align: center; border: 1px solid var(--border); position: relative; overflow: hidden; }
+  .hero-img { width: 100%; height: 200px; object-fit: cover; display: block; }
+  .hero-content { background: linear-gradient(to top, rgba(15,23,42,0.97) 0%, rgba(15,23,42,0.7) 60%, transparent 100%); padding: 20px 20px 24px; position: relative; }
+  .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(circle at 60% 80%, rgba(56,189,248,0.06) 0%, transparent 60%); pointer-events: none; }
+  .hero h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 4px; }
+  .hero .dates { color: var(--accent); font-size: 0.9rem; font-weight: 600; margin-bottom: 16px; }
+  .route-pills { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 16px; }
+  .route-pill { background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; color: var(--accent); font-weight: 600; }
+  .route-arrow { color: var(--muted); font-size: 0.7rem; align-self: center; }
+  .route-pill-link { cursor: pointer; transition: background 0.2s, color 0.2s; }
+  .route-pill-link:hover { background: rgba(56,189,248,0.35); }
+  .route-pill-link:active { transform: scale(0.95); }
+  .countdown { background: rgba(56,189,248,0.1); border: 1px solid rgba(56,189,248,0.2); border-radius: 12px; padding: 12px; }
+  .countdown-num { font-size: 2rem; font-weight: 900; color: var(--accent); }
+  .countdown-label { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* SCORE CARD */
+  .score-card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; border: 1px solid var(--border); }
+  .score-card h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; }
+  .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .score-item { background: var(--card2); border-radius: 8px; padding: 10px; text-align: center; }
+  .score-item .val { font-size: 1.5rem; font-weight: 800; }
+  .score-item .lbl { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .score-item.pts .val { color: var(--confirmed); }
+  .score-item.acts .val { color: var(--accent); }
+  .score-item.streak .val { color: var(--flexible); }
+  .score-item.badges .val { font-size: 1.2rem; }
+
+  /* DAY SELECTOR */
+  .day-scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; scrollbar-width: none; }
+  .day-scroll::-webkit-scrollbar { display: none; }
+  .day-chip { flex-shrink: 0; background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 8px 14px; cursor: pointer; text-align: center; transition: all 0.2s; }
+  .day-chip.active { background: var(--accent); border-color: var(--accent); }
+  .day-chip.active .day-name { color: #0f172a; }
+  .day-chip.active .day-date { color: #0f172a; }
+  .day-chip .day-name { font-weight: 700; font-size: 0.75rem; color: var(--text); }
+  .day-chip .day-date { font-size: 0.65rem; color: var(--muted); }
+  .day-chip .day-city { font-size: 0.6rem; color: var(--accent); font-weight: 600; margin-top: 2px; }
+  .day-chip.active .day-city { color: #0f172a; }
+
+  /* TIMELINE */
+  .day-panel { display: none; }
+  .day-panel.active { display: block; }
+  .day-header { background: var(--card); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; border: 1px solid var(--border); }
+  .day-header h2 { font-size: 1.1rem; font-weight: 800; }
+  .day-header .hotel-badge { display: inline-flex; align-items: center; gap: 4px; background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.3); border-radius: 8px; padding: 4px 10px; font-size: 0.7rem; color: var(--hotel); margin-top: 8px; }
+
+  .timeline { position: relative; }
+  .timeline::before { content: ''; position: absolute; left: 20px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .event { display: flex; gap: 12px; margin-bottom: 10px; position: relative; }
+  .event-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: 14px; margin-left: 15px; position: relative; z-index: 1; }
+  .event-dot.confirmed { background: var(--confirmed); box-shadow: 0 0 8px rgba(34,197,94,0.5); }
+  .event-dot.flexible { background: var(--flexible); }
+  .event-dot.travel { background: var(--travel); }
+  .event-dot.hotel { background: var(--hotel); }
+  .event-dot.food { background: var(--food); box-shadow: 0 0 8px rgba(236,72,153,0.5); }
+  .event-body { flex: 1; background: var(--card); border-radius: 10px; padding: 10px 12px; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+  .event-body:active { transform: scale(0.98); }
+  .event-body.confirmed { border-left: 3px solid var(--confirmed); }
+  .event-body.flexible { border-left: 3px solid var(--flexible); }
+  .event-body.travel { border-left: 3px solid var(--travel); }
+  .event-body.hotel-event { border-left: 3px solid var(--hotel); }
+  .event-body.food { border-left: 3px solid var(--food); }
+  .event-time { font-size: 0.65rem; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+  .event-title { font-weight: 700; font-size: 0.9rem; margin: 2px 0; }
+  .event-note { font-size: 0.75rem; color: var(--muted); }
+  .event-addr { font-size: 0.7rem; color: var(--accent); margin-top: 4px; }
+  .status-badge { display: inline-block; font-size: 0.6rem; font-weight: 700; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+  .status-badge.confirmed { background: rgba(34,197,94,0.2); color: var(--confirmed); }
+  .status-badge.flexible { background: rgba(245,158,11,0.2); color: var(--flexible); }
+
+  /* CHECK IN BUTTON */
+  .checkin-btn { display: block; width: 100%; margin-top: 8px; background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.3); color: var(--confirmed); padding: 8px; border-radius: 8px; font-size: 0.75rem; font-weight: 700; cursor: pointer; transition: all 0.2s; text-align: center; }
+  .checkin-btn.done { background: var(--confirmed); color: #fff; border-color: var(--confirmed); }
+  .checkin-btn:active { transform: scale(0.97); }
+
+  /* POINTS POPUP */
+  .points-pop { position: fixed; top: 80px; right: 16px; background: var(--confirmed); color: #fff; padding: 8px 14px; border-radius: 20px; font-weight: 800; font-size: 0.85rem; z-index: 999; opacity: 0; transform: translateY(-10px); transition: all 0.3s; pointer-events: none; }
+  .points-pop.show { opacity: 1; transform: translateY(0); }
+
+  /* MAP PAGE */
+  .map-container { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); margin-bottom: 16px; }
+  .map-container iframe { width: 100%; height: 400px; border: none; display: block; }
+  .stop-list { display: flex; flex-direction: column; gap: 8px; }
+  .stop-card { background: var(--card); border-radius: 10px; padding: 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 12px; }
+  .stop-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #0f172a; font-weight: 800; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .stop-info .stop-name { font-weight: 700; font-size: 0.9rem; }
+  .stop-info .stop-dates { font-size: 0.7rem; color: var(--muted); }
+  .stop-info .stop-addr { font-size: 0.68rem; color: var(--accent); margin-top: 2px; }
+
+  /* GAME PAGE */
+  .game-header { background: linear-gradient(135deg, #1a1040, #0f172a); border-radius: 16px; padding: 20px; margin-bottom: 16px; border: 1px solid rgba(99,102,241,0.3); text-align: center; }
+  .game-header h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; }
+  .game-header p { color: var(--muted); font-size: 0.8rem; }
+  .big-score { font-size: 3rem; font-weight: 900; color: var(--confirmed); line-height: 1; margin: 12px 0 4px; }
+  .level-bar { background: var(--border); border-radius: 4px; height: 8px; margin: 8px 0; overflow: hidden; }
+  .level-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--confirmed)); border-radius: 4px; transition: width 0.5s; }
+
+  .challenges-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .challenge-card { background: var(--card); border-radius: 10px; padding: 12px; border: 1px solid var(--border); cursor: pointer; transition: all 0.2s; }
+  .challenge-card.done { border-color: var(--confirmed); background: rgba(34,197,94,0.05); }
+  .challenge-card:active { transform: scale(0.97); }
+  .challenge-icon { font-size: 1.5rem; margin-bottom: 6px; }
+  .challenge-title { font-weight: 700; font-size: 0.8rem; margin-bottom: 2px; }
+  .challenge-pts { font-size: 0.7rem; color: var(--confirmed); font-weight: 700; }
+  .challenge-desc { font-size: 0.65rem; color: var(--muted); margin-top: 4px; }
+  .challenge-check { float: right; color: var(--confirmed); font-size: 1rem; }
+
+  .badges-section h3 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 10px; }
+  .badges-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .badge-item { background: var(--card); border-radius: 10px; padding: 10px 6px; text-align: center; border: 1px solid var(--border); }
+  .badge-item.unlocked { border-color: var(--flexible); background: rgba(245,158,11,0.05); }
+  .badge-item.locked { opacity: 0.4; }
+  .badge-emoji { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+  .badge-name { font-size: 0.6rem; color: var(--muted); }
+  .badge-item.unlocked .badge-name { color: var(--flexible); }
+
+  /* CITY OVERVIEW */
+  .city-overview { display: none; }
+  .city-overview.active { display: block; }
+  .city-hero { border-radius: 14px; padding: 20px; margin-bottom: 14px; border: 1px solid var(--border); text-align: center; }
+  .city-hero h2 { font-size: 1.3rem; font-weight: 800; margin-bottom: 4px; }
+  .city-hero p { font-size: 0.8rem; color: var(--muted); }
+  .back-btn { display: inline-flex; align-items: center; gap: 6px; background: none; border: 1px solid var(--border); color: var(--muted); padding: 6px 12px; border-radius: 20px; font-size: 0.75rem; cursor: pointer; margin-bottom: 14px; }
+  .back-btn:active { background: var(--card); }
+  .day-card { background: var(--card); border-radius: 12px; border: 1px solid var(--border); margin-bottom: 10px; cursor: pointer; overflow: hidden; transition: border-color 0.2s; }
+  .day-card:active { transform: scale(0.99); }
+  .day-card-header { padding: 14px 16px 10px; display: flex; align-items: center; justify-content: space-between; }
+  .day-card-title { font-weight: 800; font-size: 1rem; }
+  .day-card-date { font-size: 0.72rem; color: var(--accent); font-weight: 600; }
+  .day-card-hotel { font-size: 0.7rem; color: var(--hotel); padding: 0 16px 10px; }
+  .day-card-activities { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 14px; }
+  .act-chip { background: var(--card2); border-radius: 20px; padding: 4px 10px; font-size: 0.7rem; color: var(--muted); border: 1px solid var(--border); }
+  .act-chip.confirmed { border-color: rgba(34,197,94,0.4); color: var(--confirmed); background: rgba(34,197,94,0.07); }
+  .act-chip.food { border-color: rgba(236,72,153,0.4); color: #f9a8d4; background: rgba(236,72,153,0.07); }
+  .day-card-arrow { font-size: 1rem; color: var(--muted); padding-right: 4px; }
+
+  /* SECTION LABELS */
+  .section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 8px; margin-top: 4px; padding-left: 4px; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 10px 18px; font-size: 0.8rem; font-weight: 600; opacity: 0; transition: all 0.3s; z-index: 999; white-space: nowrap; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* ACTIVITY DRAWER */
+  .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.25s; }
+  .drawer-overlay.open { opacity: 1; pointer-events: all; }
+  .drawer { position: fixed; bottom: 0; left: 0; right: 0; max-width: 600px; margin: 0 auto; background: #1a2540; border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; z-index: 201; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.32,0.72,0,1); max-height: 85vh; overflow-y: auto; }
+  .drawer.open { transform: translateY(0); }
+  .drawer-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 0; }
+  .drawer-inner { padding: 16px 20px 40px; }
+  .drawer-icon { font-size: 2.5rem; margin-bottom: 8px; }
+  .drawer-title { font-size: 1.2rem; font-weight: 800; margin-bottom: 4px; }
+  .drawer-time { font-size: 0.75rem; color: var(--accent); font-weight: 600; margin-bottom: 12px; }
+  .drawer-desc { font-size: 0.85rem; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
+  .drawer-detail { background: var(--card); border-radius: 10px; padding: 12px; margin-bottom: 10px; }
+  .drawer-detail-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 4px; }
+  .drawer-detail-val { font-size: 0.85rem; font-weight: 600; }
+  .drawer-tip { background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.25); border-radius: 10px; padding: 10px 12px; font-size: 0.78rem; color: var(--flexible); margin-bottom: 14px; }
+  .drawer-checkin-btn { display: block; width: 100%; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.4); color: var(--confirmed); padding: 12px; border-radius: 10px; font-size: 0.85rem; font-weight: 700; cursor: pointer; text-align: center; }
+  .drawer-checkin-btn.done { background: var(--confirmed); color: #fff; border-color: var(--confirmed); }
+
+  /* PLAYLIST */
+  .playlist-card { background: linear-gradient(135deg, #1a0a2e, #0f172a); border: 1px solid rgba(139,92,246,0.3); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .playlist-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .playlist-icon { width: 44px; height: 44px; background: linear-gradient(135deg, #8b5cf6, #ec4899); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+  .playlist-title { font-weight: 800; font-size: 1rem; }
+  .playlist-sub { font-size: 0.7rem; color: var(--muted); }
+  .track-list { display: flex; flex-direction: column; gap: 1px; }
+  .track { display: flex; align-items: center; gap: 10px; padding: 8px 6px; border-radius: 8px; cursor: pointer; transition: background 0.15s; }
+  .track:active { background: rgba(255,255,255,0.05); }
+  .track-num { width: 20px; font-size: 0.7rem; color: var(--muted); text-align: center; flex-shrink: 0; }
+  .track-info { flex: 1; }
+  .track-name { font-size: 0.82rem; font-weight: 600; }
+  .track-artist { font-size: 0.68rem; color: var(--muted); }
+  .track-dur { font-size: 0.68rem; color: var(--muted); flex-shrink: 0; }
+
+  /* SCAVENGER HUNT */
+  .scav-category { margin-bottom: 16px; }
+  .scav-cat-header { font-size: 0.8rem; font-weight: 800; color: var(--text); margin-bottom: 8px; padding: 6px 10px; background: var(--card); border-radius: 8px; border-left: 3px solid var(--accent); }
+  .scav-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .scav-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 10px 6px; text-align: center; cursor: pointer; transition: all 0.2s; user-select: none; }
+  .scav-item:active { transform: scale(0.93); }
+  .scav-item.found { background: rgba(34,197,94,0.1); border-color: var(--confirmed); }
+  .scav-item .scav-emoji { font-size: 1.4rem; display: block; margin-bottom: 4px; }
+  .scav-item .scav-label { font-size: 0.62rem; color: var(--muted); line-height: 1.3; display: block; }
+  .scav-item.found .scav-label { color: var(--confirmed); }
+  .scav-item .scav-pts { font-size: 0.58rem; color: var(--accent); font-weight: 700; display: block; margin-top: 2px; }
+  .scav-item.found .scav-pts { color: var(--confirmed); }
+  .scav-found-stamp { position: absolute; top: 4px; right: 4px; font-size: 0.7rem; }
+  .scav-item { position: relative; }
+
+  /* IDEAS TAB */
+  .ideas-hero { background: linear-gradient(135deg,#1a1040,#0f2a1a); border-radius: 14px; padding: 20px; margin-bottom: 16px; text-align: center; border: 1px solid var(--border); }
+  .ideas-hero h2 { font-size: 1.1rem; font-weight: 800; margin-bottom: 4px; }
+  .ideas-hero p { font-size: 0.78rem; color: var(--muted); }
+  .ideas-tabs { display: flex; background: var(--card); border-radius: 12px; padding: 4px; margin-bottom: 16px; gap: 4px; }
+  .ideas-tab { flex: 1; padding: 8px; border-radius: 8px; border: none; background: none; color: var(--muted); font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .ideas-tab.active { background: var(--accent); color: #0f172a; }
+  .ideas-panel { display: none; }
+  .ideas-panel.active { display: block; }
+
+  /* NEARBY */
+  .nearby-location { background: var(--card); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .nearby-location-name { font-weight: 700; font-size: 0.9rem; }
+  .nearby-location-sub { font-size: 0.7rem; color: var(--muted); }
+  .loc-pill { font-size: 0.65rem; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); color: var(--accent); padding: 3px 8px; border-radius: 20px; font-weight: 700; white-space: nowrap; }
+  .category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 16px; }
+  .cat-btn { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px 10px; text-align: center; cursor: pointer; transition: all 0.2s; text-decoration: none; display: block; }
+  .cat-btn:active { transform: scale(0.97); border-color: var(--accent); }
+  .cat-icon { font-size: 1.6rem; display: block; margin-bottom: 6px; }
+  .cat-label { font-size: 0.78rem; font-weight: 700; color: var(--text); display: block; }
+  .cat-sub { font-size: 0.65rem; color: var(--muted); display: block; margin-top: 2px; }
+
+  /* SUGGESTIONS */
+  .suggest-card { background: var(--card); border: 1px solid var(--border); border-radius: 14px; padding: 16px; margin-bottom: 16px; }
+  .suggest-card h3 { font-size: 0.95rem; font-weight: 800; margin-bottom: 4px; }
+  .suggest-card p { font-size: 0.75rem; color: var(--muted); margin-bottom: 14px; }
+  .suggest-form { display: flex; flex-direction: column; gap: 10px; }
+  .suggest-input { background: var(--card2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; font-family: inherit; width: 100%; }
+  .suggest-input:focus { outline: none; border-color: var(--accent); }
+  .suggest-select { background: var(--card2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; font-family: inherit; width: 100%; appearance: none; }
+  .suggest-textarea { background: var(--card2); border: 1px solid var(--border); color: var(--text); border-radius: 8px; padding: 10px 12px; font-size: 0.85rem; font-family: inherit; width: 100%; min-height: 80px; resize: vertical; }
+  .suggest-textarea:focus, .suggest-select:focus { outline: none; border-color: var(--accent); }
+  .suggest-submit { background: var(--accent); color: #0f172a; border: none; border-radius: 8px; padding: 12px; font-size: 0.85rem; font-weight: 800; cursor: pointer; width: 100%; }
+  .suggest-submit:active { opacity: 0.85; }
+  .suggestion-item { background: var(--card2); border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; border-left: 3px solid var(--accent); }
+  .suggestion-item .si-name { font-weight: 700; font-size: 0.82rem; }
+  .suggestion-item .si-day { font-size: 0.68rem; color: var(--accent); margin-bottom: 2px; }
+  .suggestion-item .si-note { font-size: 0.75rem; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <div class="nav-title">🗺️ Turley Trip '26</div>
+    <div class="nav-tabs">
+      <button class="tab-btn active" onclick="showPage('home')">Home</button>
+      <button class="tab-btn" onclick="showPage('itinerary')">Days</button>
+      <button class="tab-btn" onclick="showPage('map')">Map</button>
+      <button class="tab-btn" onclick="showPage('game')">Game</button>
+      <button class="tab-btn" onclick="showPage('ideas')">Ideas</button>
+    </div>
+  </div>
+</nav>
+
+<div id="points-pop" class="points-pop">+10 pts!</div>
+<div id="toast" class="toast"></div>
+
+<!-- ACTIVITY DRAWER -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeDrawer()"></div>
+<div class="drawer" id="activity-drawer">
+  <div class="drawer-handle"></div>
+  <div class="drawer-inner" id="drawer-inner"></div>
+</div>
+
+<!-- HOME PAGE -->
+<div id="page-home" class="page active">
+  <div class="hero">
+    <img class="hero-img" src="https://images.unsplash.com/photo-1534430480872-3498386e7856?w=800&q=80" alt="New York City skyline" onerror="this.style.display='none'">
+    <div class="hero-content">
+    <h1>Turley Family<br>Road Trip</h1>
+    <div class="dates">July 25 – August 1, 2026</div>
+    <div class="route-pills">
+      <span class="route-pill">Indianapolis</span>
+      <span class="route-arrow">→</span>
+      <span class="route-pill route-pill-link" onclick="showCityOverview('nyc')">NYC</span>
+      <span class="route-arrow">→</span>
+      <span class="route-pill route-pill-link" onclick="showCityOverview('cooperstown')">Cooperstown</span>
+      <span class="route-arrow">→</span>
+      <span class="route-pill route-pill-link" onclick="showCityOverview('fingerlakes')">Finger Lakes</span>
+      <span class="route-arrow">→</span>
+      <span class="route-pill route-pill-link" onclick="showCityOverview('niagara')">Niagara Falls</span>
+      <span class="route-arrow">→</span>
+      <span class="route-pill route-pill-link" onclick="showCityOverview('cleveland')">Cleveland</span>
+    </div>
+    <div class="countdown">
+      <div class="countdown-num" id="countdown-num">—</div>
+      <div class="countdown-label">days until departure</div>
+    </div>
+    </div><!-- end hero-content -->
+  </div>
+
+  <div class="score-card">
+    <h3>Your Adventure Stats</h3>
+    <div class="score-grid">
+      <div class="score-item pts"><div class="val" id="home-pts">0</div><div class="lbl">Points</div></div>
+      <div class="score-item acts"><div class="val" id="home-acts">0</div><div class="lbl">Checked In</div></div>
+      <div class="score-item streak"><div class="val" id="home-badges">0</div><div class="lbl">Badges</div></div>
+      <div class="score-item badges"><div class="val" id="home-challenges">0/12</div><div class="lbl">Challenges</div></div>
+    </div>
+  </div>
+
+  <div class="section-label">Confirmed Highlights</div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+    <div style="background:var(--card);border-radius:10px;padding:12px 14px;border:1px solid var(--border);border-left:3px solid var(--confirmed);display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.3rem;">✈️</span>
+      <div><div style="font-weight:700;font-size:0.85rem;">United IND → EWR</div><div style="font-size:0.7rem;color:var(--muted);">Sat Jul 25 · 7:20–9:26am</div></div>
+      <span class="status-badge confirmed" style="margin-left:auto;">Confirmed</span>
+    </div>
+    <div style="background:var(--card);border-radius:10px;padding:12px 14px;border:1px solid var(--border);border-left:3px solid var(--food);display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.3rem;">🍝</span>
+      <div><div style="font-weight:700;font-size:0.85rem;">Lunch at Carmine's</div><div style="font-size:0.7rem;color:var(--muted);">Sun Jul 27 · 12:30pm · OpenTable</div></div>
+      <span class="status-badge confirmed" style="margin-left:auto;">Confirmed</span>
+    </div>
+    <div style="background:var(--card);border-radius:10px;padding:12px 14px;border:1px solid var(--border);border-left:3px solid var(--food);display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.3rem;">🥞</span>
+      <div><div style="font-weight:700;font-size:0.85rem;">Bubby's Brunch</div><div style="font-size:0.7rem;color:var(--muted);">Mon Jul 28 · 9:00am · Resy</div></div>
+      <span class="status-badge confirmed" style="margin-left:auto;">Confirmed</span>
+    </div>
+    <div style="background:var(--card);border-radius:10px;padding:12px 14px;border:1px solid var(--border);border-left:3px solid var(--confirmed);display:flex;align-items:center;gap:10px;">
+      <span style="font-size:1.3rem;">🎭</span>
+      <div><div style="font-weight:700;font-size:0.85rem;">The Outsiders</div><div style="font-size:0.7rem;color:var(--muted);">Sun Jul 27 · 3:00pm · Jacobs Theatre</div></div>
+      <span class="status-badge confirmed" style="margin-left:auto;">Confirmed</span>
+    </div>
+  </div>
+
+  <div class="section-label">NYC Playlist 🎵</div>
+  <div class="playlist-card">
+    <div class="playlist-header">
+      <div class="playlist-icon">🎵</div>
+      <div><div class="playlist-title">New York State of Mind</div><div class="playlist-sub">20 tracks · vibes for the road</div></div>
+    </div>
+    <div class="track-list">
+      <div class="track"><div class="track-num">1</div><div class="track-info"><div class="track-name">Empire State of Mind</div><div class="track-artist">Jay-Z ft. Alicia Keys</div></div><div class="track-dur">4:37</div></div>
+      <div class="track"><div class="track-num">2</div><div class="track-info"><div class="track-name">New York, New York</div><div class="track-artist">Frank Sinatra</div></div><div class="track-dur">3:22</div></div>
+      <div class="track"><div class="track-num">3</div><div class="track-info"><div class="track-name">New York City</div><div class="track-artist">Alicia Keys</div></div><div class="track-dur">4:07</div></div>
+      <div class="track"><div class="track-num">4</div><div class="track-info"><div class="track-name">Welcome to New York</div><div class="track-artist">Taylor Swift</div></div><div class="track-dur">3:33</div></div>
+      <div class="track"><div class="track-num">5</div><div class="track-info"><div class="track-name">New York Minute</div><div class="track-artist">Don Henley</div></div><div class="track-dur">5:01</div></div>
+      <div class="track"><div class="track-num">6</div><div class="track-info"><div class="track-name">Brooklyn Baby</div><div class="track-artist">Lana Del Rey</div></div><div class="track-dur">5:39</div></div>
+      <div class="track"><div class="track-num">7</div><div class="track-info"><div class="track-name">New York City Serenade</div><div class="track-artist">Bruce Springsteen</div></div><div class="track-dur">9:55</div></div>
+      <div class="track"><div class="track-num">8</div><div class="track-info"><div class="track-name">New York Groove</div><div class="track-artist">Ace Frehley</div></div><div class="track-dur">3:28</div></div>
+      <div class="track"><div class="track-num">9</div><div class="track-info"><div class="track-name">Englishman in New York</div><div class="track-artist">Sting</div></div><div class="track-dur">4:26</div></div>
+      <div class="track"><div class="track-num">10</div><div class="track-info"><div class="track-name">New York City Blues</div><div class="track-artist">Billy Joel</div></div><div class="track-dur">4:10</div></div>
+      <div class="track"><div class="track-num">11</div><div class="track-info"><div class="track-name">No Sleep Till Brooklyn</div><div class="track-artist">Beastie Boys</div></div><div class="track-dur">4:07</div></div>
+      <div class="track"><div class="track-num">12</div><div class="track-info"><div class="track-name">Piano Man</div><div class="track-artist">Billy Joel</div></div><div class="track-dur">5:38</div></div>
+      <div class="track"><div class="track-num">13</div><div class="track-info"><div class="track-name">New York Is My Home</div><div class="track-artist">Darlene Love</div></div><div class="track-dur">3:15</div></div>
+      <div class="track"><div class="track-num">14</div><div class="track-info"><div class="track-name">NYC</div><div class="track-artist">Annie (Broadway)</div></div><div class="track-dur">2:48</div></div>
+      <div class="track"><div class="track-num">15</div><div class="track-info"><div class="track-name">New York City's Killing Me</div><div class="track-artist">Ray LaMontagne</div></div><div class="track-dur">3:01</div></div>
+      <div class="track"><div class="track-num">16</div><div class="track-info"><div class="track-name">On Broadway</div><div class="track-artist">The Drifters</div></div><div class="track-dur">2:43</div></div>
+      <div class="track"><div class="track-num">17</div><div class="track-info"><div class="track-name">Manhattan</div><div class="track-artist">Ella Fitzgerald</div></div><div class="track-dur">3:10</div></div>
+      <div class="track"><div class="track-num">18</div><div class="track-info"><div class="track-name">Living for the City</div><div class="track-artist">Stevie Wonder</div></div><div class="track-dur">7:24</div></div>
+      <div class="track"><div class="track-num">19</div><div class="track-info"><div class="track-name">New York City Boy</div><div class="track-artist">Pet Shop Boys</div></div><div class="track-dur">4:29</div></div>
+      <div class="track"><div class="track-num">20</div><div class="track-info"><div class="track-name">Uptown Girl</div><div class="track-artist">Billy Joel</div></div><div class="track-dur">3:17</div></div>
+    </div>
+  </div>
+
+  <div class="section-label">The Route</div>
+  <div style="background:var(--card);border-radius:12px;padding:14px;border:1px solid var(--border);margin-bottom:16px;">
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1rem;">🏠</span><span style="font-size:0.85rem;">Indianapolis, IN (fly out)</span></div>
+      <div style="padding-left:14px;color:var(--border);font-size:0.7rem;">│ United flight 7:20am</div>
+      <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1rem;">🗽</span><span style="font-size:0.85rem;font-weight:700;">New York City · Jul 25–28 · <span style="color:var(--hotel)">Tempo by Hilton Times Square</span></span></div>
+      <div style="padding-left:14px;color:var(--border);font-size:0.7rem;">│ Drive 3h 45m</div>
+      <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1rem;">⚾</span><span style="font-size:0.85rem;font-weight:700;">Cooperstown → Finger Lakes · Jul 28–30 · <span style="color:var(--hotel)">Bellhurst Castle & Winery</span></span></div>
+      <div style="padding-left:14px;color:var(--border);font-size:0.7rem;">│ Drive to Niagara</div>
+      <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1rem;">💦</span><span style="font-size:0.85rem;font-weight:700;">Niagara Falls · Jul 30–31 · <span style="color:var(--hotel)">Hilton Fallsview</span></span></div>
+      <div style="padding-left:14px;color:var(--border);font-size:0.7rem;">│ Drive to Cleveland</div>
+      <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1rem;">🎸</span><span style="font-size:0.85rem;font-weight:700;">Cleveland · Jul 31–Aug 1 · <span style="color:var(--hotel)">Hilton Cleveland Downtown</span></span></div>
+      <div style="padding-left:14px;color:var(--border);font-size:0.7rem;">│ Drive home</div>
+      <div style="display:flex;align-items:center;gap:10px;"><span style="font-size:1rem;">🏠</span><span style="font-size:0.85rem;">Indianapolis, IN (home!)</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ITINERARY PAGE -->
+<div id="page-itinerary" class="page">
+
+  <!-- CITY OVERVIEW (shown when a pill is tapped) -->
+  <div class="city-overview" id="city-overview">
+    <button class="back-btn" onclick="closeCityOverview()">← All Days</button>
+    <div id="city-overview-content"></div>
+  </div>
+
+  <div id="itinerary-main">
+  <div class="day-scroll" id="day-scroll">
+    <div class="day-chip active" onclick="showDay(0)"><div class="day-name">SAT</div><div class="day-date">Jul 25</div><div class="day-city">NYC</div></div>
+    <div class="day-chip" onclick="showDay(1)"><div class="day-name">SUN</div><div class="day-date">Jul 26</div><div class="day-city">NYC</div></div>
+    <div class="day-chip" onclick="showDay(2)"><div class="day-name">MON</div><div class="day-date">Jul 27</div><div class="day-city">NYC</div></div>
+    <div class="day-chip" onclick="showDay(3)"><div class="day-name">TUE</div><div class="day-date">Jul 28</div><div class="day-city">Coop.</div></div>
+    <div class="day-chip" onclick="showDay(4)"><div class="day-name">WED</div><div class="day-date">Jul 29</div><div class="day-city">F.Lakes</div></div>
+    <div class="day-chip" onclick="showDay(5)"><div class="day-name">THU</div><div class="day-date">Jul 30</div><div class="day-city">Niagara</div></div>
+    <div class="day-chip" onclick="showDay(6)"><div class="day-name">FRI</div><div class="day-date">Jul 31</div><div class="day-city">Cleveland</div></div>
+    <div class="day-chip" onclick="showDay(7)"><div class="day-name">SAT</div><div class="day-date">Aug 1</div><div class="day-city">Home</div></div>
+  </div>
+
+  <!-- DAY 0: Sat Jul 25 -->
+  <div class="day-panel active" id="day-0">
+    <div class="day-header">
+      <h2>Saturday, July 25 — NYC Day 1 ✈️</h2>
+      <div class="hotel-badge" onclick="openDrawer('tempo')" style="cursor:pointer;">🏨 Tempo by Hilton Times Square · 1568 Broadway ▸</div>
+    </div>
+    <div class="timeline">
+      <div class="event">
+        <div class="event-dot travel"></div>
+        <div class="event-body travel confirmed" id="ev-flight-ind">
+          <div class="event-time">7:20 – 9:26 AM</div>
+          <div class="event-title">✈️ United Flight IND → EWR</div>
+          <div class="event-note">Newark Liberty Airport</div>
+          <span class="status-badge confirmed">Confirmed</span>
+          <div class="checkin-btn" id="btn-flight-ind">Check In +15pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot hotel"></div>
+        <div class="event-body hotel-event" id="ev-tempo" style="cursor:pointer;">
+          <div class="event-time">Drop off luggage</div>
+          <div class="event-title">🏨 Tempo by Hilton Times Square</div>
+          <div class="event-note">Check-in available at 4pm · drop bags early</div>
+          <div class="event-addr">1568 Broadway, New York, NY 10036</div>
+          <span class="status-badge confirmed">Confirmed</span>
+          <div style="font-size:0.62rem;color:var(--muted);margin-top:6px;opacity:0.7;">▸ Tap for details</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot food"></div>
+        <div class="event-body food" id="ev-bagels">
+          <div class="event-time">10:00 AM</div>
+          <div class="event-title">🥯 Liberty Bagels 5th Ave</div>
+          <div class="event-addr">16 E. 58th St.</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-bagels">Check In +10pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-pedicab">
+          <div class="event-time">10:30 AM – 1:30 PM</div>
+          <div class="event-title">🚲 Pedicab through Central Park</div>
+          <div class="event-note">1 hour private tour</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-pedicab">Check In +20pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot food"></div>
+        <div class="event-body food" id="ev-lunch-mid">
+          <div class="event-time">1:00 – 2:00 PM</div>
+          <div class="event-title">🍽️ Lunch in Midtown</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-lunch-mid">Check In +10pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-totr">
+          <div class="event-time">2:45 – 4:45 PM</div>
+          <div class="event-title">🌆 Rockefeller Center & Top of the Rock</div>
+          <div class="event-note">Timed admission · arrive on time</div>
+          <div class="event-addr">30 Rockefeller Plaza</div>
+          <span class="status-badge confirmed">Confirmed</span>
+          <div class="checkin-btn" id="btn-totr">Check In +25pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot hotel"></div>
+        <div class="event-body hotel-event">
+          <div class="event-time">4:00 PM</div>
+          <div class="event-title">🏨 Hotel Check-In</div>
+          <div class="event-note">Tempo by Hilton Times Square</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot food"></div>
+        <div class="event-body food" id="ev-dinner-d1">
+          <div class="event-time">5:00 – 6:00 PM</div>
+          <div class="event-title">🍽️ Dinner near the hotel</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-dinner-d1">Check In +10pts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAY 1: Sun Jul 26 -->
+  <div class="day-panel" id="day-1">
+    <div class="day-header">
+      <h2>Sunday, July 26 — NYC Day 2 🎭</h2>
+      <div class="hotel-badge" onclick="openDrawer('tempo')" style="cursor:pointer;">🏨 Tempo by Hilton Times Square · 1568 Broadway ▸</div>
+    </div>
+    <div class="timeline">
+      <div class="event">
+        <div class="event-dot food"></div>
+        <div class="event-body food" id="ev-carmines">
+          <div class="event-time">12:30 PM</div>
+          <div class="event-title">🍝 Lunch at Carmine's</div>
+          <div class="event-note">Reservation on OpenTable</div>
+          <span class="status-badge confirmed">Confirmed</span>
+          <div class="checkin-btn" id="btn-carmines">Check In +30pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-outsiders">
+          <div class="event-time">3:00 PM · Arrive 30 min early</div>
+          <div class="event-title">🎭 The Outsiders</div>
+          <div class="event-note">2 hrs 25 min · Jacobs Theatre</div>
+          <div class="event-addr">242 West 45th Street</div>
+          <span class="status-badge confirmed">Confirmed</span>
+          <div class="checkin-btn" id="btn-outsiders">Check In +40pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot food"></div>
+        <div class="event-body food" id="ev-dinner-d2">
+          <div class="event-time">6:00 – 7:00 PM</div>
+          <div class="event-title">🍽️ Dinner in Midtown</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-dinner-d2">Check In +10pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-empire">
+          <div class="event-time">8:00 – 9:00 PM</div>
+          <div class="event-title">🌃 Empire State Building</div>
+          <div class="event-note">Do this at night for the best views! 86th Floor Observation Deck</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-empire">Check In +35pts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAY 2: Mon Jul 27 -->
+  <div class="day-panel" id="day-2">
+    <div class="day-header">
+      <h2>Monday, July 27 — NYC Day 3 🗽</h2>
+      <div class="hotel-badge" onclick="openDrawer('tempo')" style="cursor:pointer;">🏨 Tempo by Hilton Times Square · Check out by 11am ▸</div>
+    </div>
+    <div class="timeline">
+      <div class="event">
+        <div class="event-dot food"></div>
+        <div class="event-body food" id="ev-bubbys">
+          <div class="event-time">9:00 AM</div>
+          <div class="event-title">🥞 Bubby's for Brunch</div>
+          <div class="event-note">Reservation on Resy</div>
+          <div class="event-addr">120 Hudson St., New York</div>
+          <span class="status-badge confirmed">Confirmed</span>
+          <div class="checkin-btn" id="btn-bubbys">Check In +30pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-sol">
+          <div class="event-time">10:00 AM</div>
+          <div class="event-title">🗽 Statue of Liberty & Ellis Island</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-sol">Check In +40pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-911">
+          <div class="event-time">1:00 PM</div>
+          <div class="event-title">🕊️ 9/11 Memorial & Museum</div>
+          <div class="event-note">Family Pass available</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-911">Check In +35pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-yankees">
+          <div class="event-time">3:00 PM</div>
+          <div class="event-title">⚾ Yankee Stadium Classic Tour</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-yankees">Check In +30pts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAY 3: Tue Jul 28 -->
+  <div class="day-panel" id="day-3">
+    <div class="day-header">
+      <h2>Tuesday, July 28 — Road Trip Day ⚾</h2>
+      <div class="hotel-badge">🏨 Bellhurst Castle & Winery · Check in at 3pm</div>
+    </div>
+    <div class="timeline">
+      <div class="event">
+        <div class="event-dot travel"></div>
+        <div class="event-body travel confirmed" id="ev-rental-car">
+          <div class="event-time">8:00 AM</div>
+          <div class="event-title">🚗 Pick Up Rental Car</div>
+          <div class="event-note">Avis · Little Ferry, NJ</div>
+          <div class="event-addr">332 US Highway 46, Little Ferry, NJ 07643 · (201) 440-3330</div>
+          <span class="status-badge confirmed">Confirmed</span>
+          <div class="checkin-btn" id="btn-rental-car">Check In +20pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot travel"></div>
+        <div class="event-body travel">
+          <div class="event-time">~10:00 AM</div>
+          <div class="event-title">🛣️ Drive NYC → Cooperstown</div>
+          <div class="event-note">3 hrs 45 min · eat on the way · check out hotel by 11am</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-hof">
+          <div class="event-time">~1:00 PM</div>
+          <div class="event-title">⚾ National Baseball Hall of Fame</div>
+          <div class="event-note">Casual visit: 2–3 hrs · Adults $35, Children $26 · M–F 9am–5pm</div>
+          <div class="event-addr">25 Main St., Cooperstown, NY 13326</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-hof">Check In +40pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot travel"></div>
+        <div class="event-body travel">
+          <div class="event-time">~3:30 PM</div>
+          <div class="event-title">🛣️ Drive to Finger Lakes</div>
+          <div class="event-note">~1 hr from Cooperstown to Geneva, NY</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot hotel"></div>
+        <div class="event-body hotel-event" id="ev-bellhurst">
+          <div class="event-time">3:00 PM</div>
+          <div class="event-title">🏰 Bellhurst Castle & Winery Check-In</div>
+          <div class="event-addr">4069 W Lake Rd., Geneva, NY 14456</div>
+          <span class="status-badge confirmed">Confirmed</span>
+          <div class="checkin-btn" id="btn-bellhurst">Check In +20pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot food"></div>
+        <div class="event-body food" id="ev-dinner-d3">
+          <div class="event-time">5:00 – 7:00 PM</div>
+          <div class="event-title">🍺 Dinner</div>
+          <div class="event-note">Options: Ommegang Brewery (11 min, closes 7pm) · Edgar's at the Castle ($$$)</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-dinner-d3">Check In +10pts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAY 4: Wed Jul 29 -->
+  <div class="day-panel" id="day-4">
+    <div class="day-header">
+      <h2>Wednesday, July 29 — Finger Lakes 🍷</h2>
+      <div class="hotel-badge">🏰 Bellhurst Castle & Winery · Geneva, NY</div>
+    </div>
+    <div class="timeline">
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-3bros">
+          <div class="event-time">11:00 AM – 12:00 PM</div>
+          <div class="event-title">🍷 Three Brothers Winery & Estates</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-3bros">Check In +20pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-watkins">
+          <div class="event-time">2:00 – 4:00 PM</div>
+          <div class="event-title">💧 Watkins Glen State Park</div>
+          <div class="event-note">Famous waterfalls hike</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-watkins">Check In +30pts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAY 5: Thu Jul 30 -->
+  <div class="day-panel" id="day-5">
+    <div class="day-header">
+      <h2>Thursday, July 30 — Niagara Falls 💦</h2>
+      <div class="hotel-badge">🏨 Hilton Niagara Falls/Fallsview Hotel & Suites</div>
+    </div>
+    <div class="timeline">
+      <div class="event">
+        <div class="event-dot hotel"></div>
+        <div class="event-body hotel-event">
+          <div class="event-time">By 11:00 AM</div>
+          <div class="event-title">🏰 Check out Bellhurst Castle</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot travel"></div>
+        <div class="event-body travel">
+          <div class="event-time">Late morning</div>
+          <div class="event-title">🛣️ Drive to Niagara Falls</div>
+          <div class="event-note">~2.5 hrs from Geneva, NY to Niagara Falls, ON</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-hornblower">
+          <div class="event-time">12:00 – 2:00 PM</div>
+          <div class="event-title">🚢 Hornblower Tour (Niagara Cruises)</div>
+          <div class="event-note">Get up close to the falls!</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-hornblower">Check In +40pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot hotel"></div>
+        <div class="event-body hotel-event" id="ev-niagara-checkin">
+          <div class="event-time">4:00 PM</div>
+          <div class="event-title">🏨 Hilton Niagara Falls Check-In</div>
+          <div class="event-addr">6361 Fallsview Blvd, Niagara Falls, ON L2G 3V9</div>
+          <span class="status-badge confirmed">Confirmed</span>
+          <div class="checkin-btn" id="btn-niagara-checkin">Check In +15pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-cliftonhill">
+          <div class="event-time">6:00 – 8:00 PM</div>
+          <div class="event-title">🎡 Clifton Hill</div>
+          <div class="event-note">"Las Vegas for Kids" — rides, attractions, dinner</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-cliftonhill">Check In +20pts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAY 6: Fri Jul 31 -->
+  <div class="day-panel" id="day-6">
+    <div class="day-header">
+      <h2>Friday, July 31 — Cleveland 🎸</h2>
+      <div class="hotel-badge">🏨 Hilton Cleveland Downtown · Check in at 4pm</div>
+    </div>
+    <div class="timeline">
+      <div class="event">
+        <div class="event-dot hotel"></div>
+        <div class="event-body hotel-event">
+          <div class="event-time">By 11:00 AM</div>
+          <div class="event-title">🏨 Check out Hilton Niagara</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot travel"></div>
+        <div class="event-body travel">
+          <div class="event-time">Late morning</div>
+          <div class="event-title">🛣️ Drive Niagara → Cleveland</div>
+          <div class="event-note">~2.5 hrs</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot hotel"></div>
+        <div class="event-body hotel-event" id="ev-cleveland-checkin">
+          <div class="event-time">4:00 PM</div>
+          <div class="event-title">🏨 Hilton Cleveland Downtown Check-In</div>
+          <div class="event-addr">100 Lakeside Ave. E, Cleveland, OH 44114</div>
+          <span class="status-badge confirmed">Confirmed</span>
+          <div class="checkin-btn" id="btn-cleveland-checkin">Check In +15pts</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-cleveland-evening">
+          <div class="event-time">Evening</div>
+          <div class="event-title">🎸 Explore Cleveland</div>
+          <div class="event-note">Rock & Roll Hall of Fame · West Side Market · Lake Erie waterfront</div>
+          <span class="status-badge flexible">Flexible</span>
+          <div class="checkin-btn" id="btn-cleveland-evening">Check In +20pts</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAY 7: Sat Aug 1 -->
+  <div class="day-panel" id="day-7">
+    <div class="day-header">
+      <h2>Saturday, August 1 — Heading Home 🏠</h2>
+      <div class="hotel-badge">🏨 Check out Hilton Cleveland by 11am</div>
+    </div>
+    <div class="timeline">
+      <div class="event">
+        <div class="event-dot hotel"></div>
+        <div class="event-body hotel-event">
+          <div class="event-time">By 11:00 AM</div>
+          <div class="event-title">🏨 Check out Hilton Cleveland</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot travel"></div>
+        <div class="event-body travel">
+          <div class="event-time">8:00 AM</div>
+          <div class="event-title">🛣️ Leave Cleveland for Indianapolis</div>
+          <div class="event-note">~5 hrs · welcome home!</div>
+        </div>
+      </div>
+      <div class="event">
+        <div class="event-dot confirmed"></div>
+        <div class="event-body confirmed" id="ev-home">
+          <div class="event-time">Afternoon</div>
+          <div class="event-title">🏠 Back in Indianapolis!</div>
+          <div class="event-note">Trip complete — what an adventure!</div>
+          <div class="checkin-btn" id="btn-home">We're Home! +50pts 🎉</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div><!-- end itinerary-main -->
+</div>
+
+<!-- MAP PAGE -->
+<div id="page-map" class="page">
+  <div class="section-label">Interactive Route Map</div>
+  <div class="map-container" style="height:420px;position:relative;">
+    <div id="trip-map" style="width:100%;height:100%;border-radius:12px;"></div>
+  </div>
+  <p style="font-size:0.7rem;color:var(--muted);margin-bottom:12px;text-align:center;">Tap pins to explore each stop</p>
+
+  <div class="section-label">All Stops</div>
+  <div class="stop-list">
+    <div class="stop-card">
+      <div class="stop-num">1</div>
+      <div class="stop-info">
+        <div class="stop-name">✈️ Indianapolis → Newark</div>
+        <div class="stop-dates">Sat Jul 25 · United Flight 7:20am</div>
+      </div>
+    </div>
+    <div class="stop-card">
+      <div class="stop-num">2</div>
+      <div class="stop-info">
+        <div class="stop-name">🗽 New York City</div>
+        <div class="stop-dates">Jul 25–28 · 3 nights</div>
+        <div class="stop-addr">Tempo by Hilton Times Square · 1568 Broadway</div>
+      </div>
+    </div>
+    <div class="stop-card">
+      <div class="stop-num">3</div>
+      <div class="stop-info">
+        <div class="stop-name">⚾ Cooperstown, NY</div>
+        <div class="stop-dates">Jul 28 · day trip</div>
+        <div class="stop-addr">National Baseball Hall of Fame · 25 Main St.</div>
+      </div>
+    </div>
+    <div class="stop-card">
+      <div class="stop-num">4</div>
+      <div class="stop-info">
+        <div class="stop-name">🍷 Finger Lakes, NY</div>
+        <div class="stop-dates">Jul 28–30 · 2 nights</div>
+        <div class="stop-addr">Bellhurst Castle & Winery · 4069 W Lake Rd., Geneva</div>
+      </div>
+    </div>
+    <div class="stop-card">
+      <div class="stop-num">5</div>
+      <div class="stop-info">
+        <div class="stop-name">💦 Niagara Falls, ON</div>
+        <div class="stop-dates">Jul 30–31 · 1 night</div>
+        <div class="stop-addr">Hilton Fallsview · 6361 Fallsview Blvd</div>
+      </div>
+    </div>
+    <div class="stop-card">
+      <div class="stop-num">6</div>
+      <div class="stop-info">
+        <div class="stop-name">🎸 Cleveland, OH</div>
+        <div class="stop-dates">Jul 31–Aug 1 · 1 night</div>
+        <div class="stop-addr">Hilton Cleveland Downtown · 100 Lakeside Ave. E</div>
+      </div>
+    </div>
+    <div class="stop-card">
+      <div class="stop-num">7</div>
+      <div class="stop-info">
+        <div class="stop-name">🏠 Indianapolis, IN</div>
+        <div class="stop-dates">Sat Aug 1 · Home!</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- GAME PAGE -->
+<div id="page-game" class="page">
+  <div class="game-header">
+    <div style="font-size:2rem;">🏆</div>
+    <h2>Trip Quest</h2>
+    <p>Check in to earn points & unlock badges!</p>
+    <div class="big-score" id="game-pts">0</div>
+    <div style="font-size:0.75rem;color:var(--muted);margin-bottom:8px;">points</div>
+    <div class="level-bar"><div class="level-fill" id="level-fill" style="width:0%"></div></div>
+    <div style="font-size:0.7rem;color:var(--muted)" id="level-label">Level 1 Explorer</div>
+  </div>
+
+  <div class="section-label">Bonus Challenges</div>
+  <div class="challenges-grid">
+    <div class="challenge-card" id="ch-selfie" onclick="completeChallenge('selfie','Times Square Selfie',15)">
+      <div class="challenge-icon">🤳</div>
+      <div class="challenge-title">Times Square Selfie</div>
+      <div class="challenge-pts">+15 pts</div>
+      <div class="challenge-desc">Strike a pose in the middle of Times Square</div>
+    </div>
+    <div class="challenge-card" id="ch-bagel" onclick="completeChallenge('bagel','NY Bagel Fan',15)">
+      <div class="challenge-icon">🥯</div>
+      <div class="challenge-title">Bagel Connoisseur</div>
+      <div class="challenge-pts">+15 pts</div>
+      <div class="challenge-desc">Eat a proper New York bagel</div>
+    </div>
+    <div class="challenge-card" id="ch-pizza" onclick="completeChallenge('pizza','NY Pizza Slice',15)">
+      <div class="challenge-icon">🍕</div>
+      <div class="challenge-title">Pizza by the Slice</div>
+      <div class="challenge-pts">+15 pts</div>
+      <div class="challenge-desc">Grab a classic NYC dollar slice</div>
+    </div>
+    <div class="challenge-card" id="ch-subway" onclick="completeChallenge('subway','Subway Rider',10)">
+      <div class="challenge-icon">🚇</div>
+      <div class="challenge-title">Subway Rider</div>
+      <div class="challenge-pts">+10 pts</div>
+      <div class="challenge-desc">Ride the NYC subway at least once</div>
+    </div>
+    <div class="challenge-card" id="ch-hot-dog" onclick="completeChallenge('hot-dog','Street Food Hero',10)">
+      <div class="challenge-icon">🌭</div>
+      <div class="challenge-title">Street Food Hero</div>
+      <div class="challenge-pts">+10 pts</div>
+      <div class="challenge-desc">Eat from a NYC street cart</div>
+    </div>
+    <div class="challenge-card" id="ch-falls-selfie" onclick="completeChallenge('falls-selfie','Falls Photo',20)">
+      <div class="challenge-icon">💦</div>
+      <div class="challenge-title">Falls Photo</div>
+      <div class="challenge-pts">+20 pts</div>
+      <div class="challenge-desc">Get soaked on the Hornblower tour</div>
+    </div>
+    <div class="challenge-card" id="ch-baseball" onclick="completeChallenge('baseball','Hall of Famer',20)">
+      <div class="challenge-icon">⚾</div>
+      <div class="challenge-title">Hall of Famer</div>
+      <div class="challenge-pts">+20 pts</div>
+      <div class="challenge-desc">Spot your favorite player's plaque in Cooperstown</div>
+    </div>
+    <div class="challenge-card" id="ch-winery" onclick="completeChallenge('winery','Winery Explorer',15)">
+      <div class="challenge-icon">🍷</div>
+      <div class="challenge-title">Winery Explorer</div>
+      <div class="challenge-pts">+15 pts</div>
+      <div class="challenge-desc">Visit a Finger Lakes winery</div>
+    </div>
+    <div class="challenge-card" id="ch-waterfall" onclick="completeChallenge('waterfall','Waterfall Chaser',15)">
+      <div class="challenge-icon">🌊</div>
+      <div class="challenge-title">Waterfall Chaser</div>
+      <div class="challenge-pts">+15 pts</div>
+      <div class="challenge-desc">Hike through Watkins Glen gorge</div>
+    </div>
+    <div class="challenge-card" id="ch-castle" onclick="completeChallenge('castle','Castle Dweller',20)">
+      <div class="challenge-icon">🏰</div>
+      <div class="challenge-title">Castle Dweller</div>
+      <div class="challenge-pts">+20 pts</div>
+      <div class="challenge-desc">Spend the night at Bellhurst Castle</div>
+    </div>
+    <div class="challenge-card" id="ch-rocknroll" onclick="completeChallenge('rocknroll','Rock Legend',20)">
+      <div class="challenge-icon">🎸</div>
+      <div class="challenge-title">Rock Legend</div>
+      <div class="challenge-pts">+20 pts</div>
+      <div class="challenge-desc">Visit the Rock & Roll Hall of Fame in Cleveland</div>
+    </div>
+    <div class="challenge-card" id="ch-family" onclick="completeChallenge('family','Family Pic',25)">
+      <div class="challenge-icon">👨‍👩‍👧‍👦</div>
+      <div class="challenge-title">Family Photo</div>
+      <div class="challenge-pts">+25 pts</div>
+      <div class="challenge-desc">Get a great family photo at every major stop</div>
+    </div>
+  </div>
+
+  <div class="badges-section">
+    <h3>Badges</h3>
+    <div class="badges-grid" id="badges-grid">
+      <div class="badge-item locked" id="badge-explorer"><span class="badge-emoji">🗺️</span><div class="badge-name">Explorer</div></div>
+      <div class="badge-item locked" id="badge-foodie"><span class="badge-emoji">🍽️</span><div class="badge-name">Foodie</div></div>
+      <div class="badge-item locked" id="badge-historian"><span class="badge-emoji">🏛️</span><div class="badge-name">Historian</div></div>
+      <div class="badge-item locked" id="badge-nature"><span class="badge-emoji">🌿</span><div class="badge-name">Nature Lover</div></div>
+      <div class="badge-item locked" id="badge-broadway"><span class="badge-emoji">🎭</span><div class="badge-name">Broadway Star</div></div>
+      <div class="badge-item locked" id="badge-sports"><span class="badge-emoji">⚾</span><div class="badge-name">Sports Fan</div></div>
+      <div class="badge-item locked" id="badge-roadtripper"><span class="badge-emoji">🚗</span><div class="badge-name">Road Tripper</div></div>
+      <div class="badge-item locked" id="badge-champion"><span class="badge-emoji">🏆</span><div class="badge-name">Champion</div></div>
+    </div>
+  </div>
+
+  <!-- SCAVENGER HUNT -->
+  <div class="section-label" style="margin-top:8px;">🔍 Scavenger Hunt</div>
+  <p style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;padding-left:2px;">Spot it, tap it, earn points. First to spot it calls it out!</p>
+
+  <div class="scav-category">
+    <div class="scav-cat-header">🚗 On the Road</div>
+    <div class="scav-grid" id="scav-road"></div>
+  </div>
+  <div class="scav-category">
+    <div class="scav-cat-header">✈️ Airport &amp; Airplane</div>
+    <div class="scav-grid" id="scav-airport"></div>
+  </div>
+  <div class="scav-category">
+    <div class="scav-cat-header">🌿 Nature Spotter</div>
+    <div class="scav-grid" id="scav-nature"></div>
+  </div>
+  <div class="scav-category">
+    <div class="scav-cat-header">🏙️ City Life</div>
+    <div class="scav-grid" id="scav-city"></div>
+  </div>
+  <div class="scav-category">
+    <div class="scav-cat-header">🏨 Hotel &amp; Travel Life</div>
+    <div class="scav-grid" id="scav-hotel"></div>
+  </div>
+  <div class="scav-category">
+    <div class="scav-cat-header">⭐ Rare Finds</div>
+    <div class="scav-grid" id="scav-rare"></div>
+  </div>
+</div>
+
+<!-- IDEAS PAGE -->
+<div id="page-ideas" class="page">
+  <div class="ideas-hero">
+    <div style="font-size:2rem;margin-bottom:6px;">💡</div>
+    <h2>Ideas &amp; Suggestions</h2>
+    <p>Find things to do near you, or drop an idea for the family to vote on.</p>
+  </div>
+
+  <div class="ideas-tabs">
+    <button class="ideas-tab active" onclick="showIdeasPanel('nearby')">📍 Find Nearby</button>
+    <button class="ideas-tab" onclick="showIdeasPanel('suggest')">✏️ Suggest</button>
+    <button class="ideas-tab" onclick="showIdeasPanel('submitted')">📋 Submitted</button>
+  </div>
+
+  <!-- NEARBY PANEL -->
+  <div class="ideas-panel active" id="ideas-panel-nearby">
+    <div class="section-label">Which stop are you at?</div>
+    <div id="nearby-stops" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+      <div class="nearby-location" onclick="setNearbyLocation('New York City, NY')">
+        <div><div class="nearby-location-name">🗽 New York City</div><div class="nearby-location-sub">Jul 25–27</div></div>
+        <span class="loc-pill">Select</span>
+      </div>
+      <div class="nearby-location" onclick="setNearbyLocation('Cooperstown, NY')">
+        <div><div class="nearby-location-name">⚾ Cooperstown, NY</div><div class="nearby-location-sub">Jul 28</div></div>
+        <span class="loc-pill">Select</span>
+      </div>
+      <div class="nearby-location" onclick="setNearbyLocation('Geneva, NY Finger Lakes')">
+        <div><div class="nearby-location-name">🍷 Finger Lakes, NY</div><div class="nearby-location-sub">Jul 28–29</div></div>
+        <span class="loc-pill">Select</span>
+      </div>
+      <div class="nearby-location" onclick="setNearbyLocation('Niagara Falls Ontario Canada')">
+        <div><div class="nearby-location-name">💦 Niagara Falls</div><div class="nearby-location-sub">Jul 30</div></div>
+        <span class="loc-pill">Select</span>
+      </div>
+      <div class="nearby-location" onclick="setNearbyLocation('Cleveland, OH')">
+        <div><div class="nearby-location-name">🎸 Cleveland, OH</div><div class="nearby-location-sub">Jul 31</div></div>
+        <span class="loc-pill">Select</span>
+      </div>
+      <div class="nearby-location" style="border-style:dashed;cursor:pointer;" onclick="useMyLocation()">
+        <div><div class="nearby-location-name">📡 Use My Location</div><div class="nearby-location-sub">Search from where you are right now</div></div>
+        <span class="loc-pill">Detect</span>
+      </div>
+    </div>
+
+    <div id="nearby-categories" style="display:none;">
+      <div id="nearby-active-loc" style="background:rgba(56,189,248,0.1);border:1px solid rgba(56,189,248,0.25);border-radius:10px;padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:0.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);">Searching near</div>
+          <div style="font-weight:700;font-size:0.9rem;" id="nearby-loc-label">—</div>
+        </div>
+        <button onclick="resetNearbyLocation()" style="background:none;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:8px;font-size:0.7rem;cursor:pointer;">Change</button>
+      </div>
+
+      <div class="section-label">Food &amp; Drink</div>
+      <div class="category-grid" id="cat-grid-food"></div>
+      <div class="section-label">Activities</div>
+      <div class="category-grid" id="cat-grid-activities"></div>
+      <div class="section-label">Sightseeing</div>
+      <div class="category-grid" id="cat-grid-sights"></div>
+    </div>
+  </div>
+
+  <!-- SUGGEST PANEL -->
+  <div class="ideas-panel" id="ideas-panel-suggest">
+    <div class="suggest-card">
+      <h3>Got an idea? 💡</h3>
+      <p>Suggest a restaurant, attraction, or activity for the trip. We'll review as a family!</p>
+      <div class="suggest-form">
+        <input class="suggest-input" id="sug-name" placeholder="Your name" maxlength="40">
+        <input class="suggest-input" id="sug-place" placeholder="Place or activity name" maxlength="80">
+        <select class="suggest-select" id="sug-day">
+          <option value="">Which part of the trip?</option>
+          <option value="NYC">NYC (Jul 25–27)</option>
+          <option value="Cooperstown">Cooperstown (Jul 28)</option>
+          <option value="Finger Lakes">Finger Lakes (Jul 28–29)</option>
+          <option value="Niagara Falls">Niagara Falls (Jul 30)</option>
+          <option value="Cleveland">Cleveland (Jul 31)</option>
+          <option value="Anywhere">Anywhere / flexible</option>
+        </select>
+        <textarea class="suggest-textarea" id="sug-note" placeholder="Why would we love it? Any details…" maxlength="300"></textarea>
+        <button class="suggest-submit" onclick="submitSuggestion()">Submit Suggestion 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUBMITTED PANEL -->
+  <div class="ideas-panel" id="ideas-panel-submitted">
+    <div id="suggestions-list"></div>
+    <div id="no-suggestions" style="text-align:center;padding:40px 20px;color:var(--muted);">
+      <div style="font-size:2rem;margin-bottom:8px;">📭</div>
+      <div style="font-size:0.85rem;">No suggestions yet — be the first!</div>
+      <button onclick="showIdeasPanel('suggest')" style="margin-top:12px;background:var(--accent);color:#0f172a;border:none;padding:10px 20px;border-radius:8px;font-size:0.8rem;font-weight:700;cursor:pointer;">Add a Suggestion</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STATE ────────────────────────────────────────────────────────
+const STATE_KEY = 'turley-trip-2026';
+let state = JSON.parse(localStorage.getItem(STATE_KEY) || '{"pts":0,"checked":{},"challenges":{}}');
+let earnedBadges = JSON.parse(localStorage.getItem(STATE_KEY + '-badges') || '{}');
+let suggestions = JSON.parse(localStorage.getItem(STATE_KEY + '-suggestions') || '[]');
+
+function save() { localStorage.setItem(STATE_KEY, JSON.stringify(state)); }
+
+// ── ACTIVITY DATA ────────────────────────────────────────────────
+const ACTIVITIES = {
+  'tempo': {
+    icon:'🏨', title:'Tempo by Hilton Times Square', time:'Jul 25–28 · Check-in 4pm · Check-out 11am',
+    desc:"Your home base for three nights in New York City, right in the heart of Times Square. Modern rooms, great location — steps from Broadway, Central Park, Rockefeller Center, and everything else on the agenda.",
+    details:[{label:'Address',val:'1568 Broadway, New York, NY 10036'},{label:'Check-in',val:'4:00 PM (bags can be dropped earlier)'},{label:'Check-out',val:'11:00 AM on Tuesday Jul 28'},{label:'Location',val:'Times Square — walkable to nearly everything'}],
+    tip:'🏨 Drop your bags as soon as you arrive on Day 1 — they\'ll hold them before check-in so you can hit the ground running.',
+    website:'https://www.hilton.com/en/hotels/nyctepo-tempo-new-york-times-square/', maps:'https://maps.google.com/?q=1568+Broadway+New+York+NY+10036',
+    id:'tempo', pts:0
+  },
+  'flight-ind': {
+    icon:'✈️', title:'United Flight IND → EWR', time:'7:20 – 9:26 AM · Sat Jul 25',
+    desc:"Wheels up from Indianapolis to Newark Liberty Airport — the adventure officially begins! Newark is about 45 minutes from Midtown Manhattan by train or cab.",
+    details:[{label:'Flight',val:'United · IND → EWR'},{label:'Departs',val:'7:20 AM'},{label:'Arrives',val:'9:26 AM'},{label:'Airport',val:'Newark Liberty (EWR)'}],
+    tip:'💡 Take the AirTrain from EWR to Newark Penn Station, then NJ Transit to Penn Station NYC — about $18/person and 45 min total.',
+    website:'https://www.united.com', maps:'https://maps.google.com/?q=Newark+Liberty+International+Airport',
+    id:'flight-ind', pts:15
+  },
+  'bagels': {
+    icon:'🥯', title:'Liberty Bagels 5th Ave', time:'10:00 AM · Sat Jul 25',
+    desc:"A classic NYC bagel stop — hand-rolled, kettle-boiled, baked fresh. Cream cheese, lox, or go wild with the works. This is the proper New York breakfast experience.",
+    details:[{label:'Address',val:'16 E. 58th St., New York'},{label:'Type',val:'NYC bagel shop'},{label:'Tip',val:'Get there early — lines move fast'}],
+    tip:'🥯 Pro move: everything bagel with scallion cream cheese. You\'re welcome.',
+    website:'https://libertybagels.com', maps:'https://maps.google.com/?q=16+E+58th+St+New+York+NY',
+    id:'bagels', pts:10
+  },
+  'pedicab': {
+    icon:'🚲', title:'Central Park Pedicab Tour', time:'10:30 AM – 1:30 PM · Sat Jul 25',
+    desc:"A 1-hour private pedicab tour through Central Park — the most relaxed way to see Bethesda Fountain, Strawberry Fields, The Ramble, and the iconic NYC skyline from inside the park.",
+    details:[{label:'Duration',val:'1 hour private tour'},{label:'Highlights',val:'Bethesda Fountain, Strawberry Fields, Bow Bridge'},{label:'Booking',val:'Pay the driver at start'}],
+    tip:'📸 Best photo spot: Bow Bridge with the skyline behind you.',
+    website:'https://www.centralparkpedicabtours.com', maps:'https://maps.google.com/?q=Central+Park+New+York+NY',
+    id:'pedicab', pts:20
+  },
+  'totr': {
+    icon:'🌆', title:'Top of the Rock', time:'2:45 – 4:45 PM · Sat Jul 25',
+    desc:"The observation deck atop 30 Rockefeller Plaza, 70 floors up. Iconic 360° views of Manhattan including the Empire State Building directly to the south — better views of the ESB than from the ESB itself.",
+    details:[{label:'Address',val:'30 Rockefeller Plaza'},{label:'Time',val:'Timed admission 2:45pm'},{label:'Duration',val:'About 1–2 hrs'},{label:'Note',val:'Arrive at your timed slot — they\'re strict'}],
+    tip:'⏰ Timed admission — don\'t be late! The 69th floor has an outdoor deck; dress for wind.',
+    website:'https://www.topoftherocknyc.com', maps:'https://maps.google.com/?q=30+Rockefeller+Plaza+New+York+NY',
+    id:'totr', pts:25
+  },
+  'carmines': {
+    icon:'🍝', title:"Carmine's Italian Restaurant", time:'12:30 PM · Sun Jul 26',
+    desc:"New York City institution since 1990. Famous for enormous family-style portions of Southern Italian classics — chicken parm, rigatoni vodka, shrimp scampi. One dish easily feeds 3–4 people.",
+    details:[{label:'Reservation',val:'12:30 PM · OpenTable · CONFIRMED'},{label:'Style',val:'Family-style, order 2–3 dishes for the table'},{label:'Address',val:'200 W 44th St (Times Square location)'}],
+    tip:'🍝 Order family-style — 2 dishes feeds 4 people easily. The chicken parm is legendary.',
+    website:'https://www.carminesnyc.com', maps:'https://maps.google.com/?q=200+W+44th+St+New+York+NY',
+    id:'carmines', pts:30
+  },
+  'outsiders': {
+    icon:'🎭', title:'The Outsiders — Broadway', time:'3:00 PM · Sun Jul 26',
+    desc:"Based on S.E. Hinton's iconic novel and the 1983 Francis Ford Coppola film. The Broadway adaptation features stunning choreography and a rock score. Running time: 2 hours 25 minutes.",
+    details:[{label:'Theatre',val:"Jacobs Theatre"},{label:'Address',val:'242 West 45th Street'},{label:'Curtain',val:'3:00 PM · Arrive by 2:30'},{label:'Running time',val:'2 hrs 25 min (no intermission)'}],
+    tip:'🎭 Arrive 30 minutes early for best seating. No late seating — the theatre is strict.',
+    website:'https://theoutsidersbroadway.com', maps:'https://maps.google.com/?q=Jacobs+Theatre+242+West+45th+Street+New+York',
+    id:'outsiders', pts:40
+  },
+  'empire': {
+    icon:'🌃', title:'Empire State Building', time:'8:00 – 9:00 PM · Sun Jul 26',
+    desc:"The most iconic building in New York City. The 86th Floor Observation Deck puts you at 1,050 feet with sweeping views of the city at night — the lights of Manhattan spread out in every direction.",
+    details:[{label:'Deck',val:'86th Floor Observation Deck'},{label:'Tickets',val:'Children 6–12 discounted'},{label:'Best time',val:'At night — city lights are spectacular'},{label:'Address',val:'20 W 34th St'}],
+    tip:'🌃 Night visits are magic. Buy tickets in advance online to skip the line.',
+    website:'https://www.esbnyc.com', maps:'https://maps.google.com/?q=Empire+State+Building+20+W+34th+St+New+York',
+    id:'empire', pts:35
+  },
+  'bubbys': {
+    icon:'🥞', title:"Bubby's Brunch", time:'9:00 AM · Mon Jul 27',
+    desc:"A TriBeCa neighborhood staple since 1990. Famous for its weekend brunch — fluffy pancakes, eggs Benedict, fresh-squeezed OJ, homemade pie. Warm, family-friendly vibe with an all-American comfort food menu.",
+    details:[{label:'Reservation',val:'9:00 AM · Resy · CONFIRMED'},{label:'Address',val:'120 Hudson St., TriBeCa'},{label:'Known for',val:'Pancakes, brunch classics, homemade pie'}],
+    tip:'🥞 The pancakes and the pie are non-negotiable. Save room.',
+    website:'https://www.bubbys.com', maps:'https://maps.google.com/?q=120+Hudson+St+New+York+NY',
+    id:'bubbys', pts:30
+  },
+  'sol': {
+    icon:'🗽', title:'Statue of Liberty & Ellis Island', time:'10:00 AM · Mon Jul 27',
+    desc:"America's most iconic landmark. Take the ferry from Battery Park to Liberty Island to see the statue up close, then continue to Ellis Island — the entry point for millions of immigrants — with its moving museum of American history.",
+    details:[{label:'Ferry',val:'Departs Battery Park · book tickets in advance'},{label:'Liberty Island',val:'Walk around the base; pedestal/crown tickets extra'},{label:'Ellis Island',val:'Immigration Museum — deeply moving'},{label:'Duration',val:'3–4 hours for both islands'}],
+    tip:'🎟️ Book ferry tickets well in advance — they sell out. Combo ticket covers both islands.',
+    website:'https://www.statueofliberty.org', maps:'https://maps.google.com/?q=Battery+Park+New+York+NY+Ferry+to+Statue+of+Liberty',
+    id:'sol', pts:40
+  },
+  '911': {
+    icon:'🕊️', title:'9/11 Memorial & Museum', time:'1:00 PM · Mon Jul 27',
+    desc:"A profound and moving memorial to the 2,977 people lost on September 11, 2001. The twin reflecting pools sit in the exact footprints of the Twin Towers. The underground museum tells the full story with artifacts, testimonials, and exhibits.",
+    details:[{label:'Tickets',val:'Family Pass available'},{label:'Memorial',val:'Free, outdoor — the reflecting pools'},{label:'Museum',val:'Ticketed, underground — allow 2–3 hrs'},{label:'Tone',val:'Respectful and solemn — prepare emotionally'}],
+    tip:'🕊️ Give yourself time here — it\'s not something to rush. The museum is genuinely moving.',
+    website:'https://www.911memorial.org', maps:'https://maps.google.com/?q=9/11+Memorial+180+Greenwich+St+New+York',
+    id:'911', pts:35
+  },
+  'yankees': {
+    icon:'⚾', title:'Yankee Stadium Classic Tour', time:'3:00 PM · Mon Jul 27',
+    desc:"Go behind the scenes at one of baseball's most storied venues. The Classic Tour takes you through the press box, luxury suites, Monument Park (where legends are honored), the dugout, and the warning track.",
+    details:[{label:'Tour type',val:'Classic Tour'},{label:'Includes',val:'Monument Park, dugout, press box, suites'},{label:'Duration',val:'~1 hour'},{label:'Address',val:'1 E 161st St, The Bronx'}],
+    tip:'⚾ Monument Park has plaques for Ruth, Gehrig, DiMaggio, Mantle — a pilgrimage for any baseball fan.',
+    website:'https://www.mlb.com/yankees/ballpark/tours', maps:'https://maps.google.com/?q=Yankee+Stadium+1+E+161st+St+Bronx+NY',
+    id:'yankees', pts:30
+  },
+  'rental-car': {
+    icon:'🚗', title:'Pick Up Rental Car — Avis', time:'8:00 AM · Tue Jul 28',
+    desc:"The road trip phase begins! Pick up the rental car at Avis in Little Ferry, NJ — then it's open road all the way to Cooperstown, Finger Lakes, Niagara Falls, and Cleveland.",
+    details:[{label:'Company',val:'Avis'},{label:'Address',val:'332 US Highway 46, Little Ferry, NJ 07643'},{label:'Phone',val:'(201) 440-3330'},{label:'Note',val:'Check out of hotel by 11am'}],
+    tip:'🚗 Grab snacks and drinks before hitting the highway — it\'s a 3h 45m drive to Cooperstown.',
+    website:'https://www.avis.com', maps:'https://maps.google.com/?q=332+US+Highway+46+Little+Ferry+NJ+07643',
+    id:'rental-car', pts:20
+  },
+  'hof': {
+    icon:'⚾', title:'National Baseball Hall of Fame', time:'~1:00 PM · Tue Jul 28',
+    desc:"The most sacred ground in baseball. Cooperstown, NY has been the home of the Hall of Fame since 1939. Exhibits cover the full history of the game — from the Dead Ball Era to the present — with plaques honoring every inductee.",
+    details:[{label:'Address',val:'25 Main St., Cooperstown, NY 13326'},{label:'Hours',val:'M–F 9am–5pm'},{label:'Admission',val:'Adults $35 · Children $26'},{label:'Visit length',val:'Casual: 2–3 hrs · Thorough: 4+ hrs'}],
+    tip:'⚾ Budget at least 2–3 hours. The plaque gallery and the Babe Ruth exhibit are the highlights.',
+    website:'https://baseballhall.org', maps:'https://maps.google.com/?q=National+Baseball+Hall+of+Fame+25+Main+St+Cooperstown+NY',
+    id:'hof', pts:40
+  },
+  'bellhurst': {
+    icon:'🏰', title:'Bellhurst Castle & Winery', time:'Check in 3:00 PM · Tue Jul 28',
+    desc:"A stunning 19th-century Romanesque castle on the shores of Seneca Lake in the Finger Lakes wine region. The castle itself is a National Historic Landmark with gorgeous stone architecture, manicured grounds, and a working winery.",
+    details:[{label:'Address',val:'4069 W Lake Rd., Geneva, NY 14456'},{label:'Check-in',val:'3:00 PM'},{label:'Check-out',val:'11:00 AM (Thu Jul 30)'},{label:'On-site',val:'Winery, Edgar\'s Restaurant, lake views'}],
+    tip:'🏰 Walk the castle grounds at sunset — Seneca Lake views are unreal.',
+    website:'https://www.bellhurst.com', maps:'https://maps.google.com/?q=4069+W+Lake+Rd+Geneva+NY+14456',
+    id:'bellhurst', pts:20
+  },
+  '3bros': {
+    icon:'🍷', title:'Three Brothers Winery & Estates', time:'11:00 AM · Wed Jul 29',
+    desc:"One of the Finger Lakes' most beloved wineries, with three distinct tasting rooms offering wine, cider, and beer all in one destination. Beautiful lakeside setting on Seneca Lake with stunning views.",
+    details:[{label:'Location',val:'Finger Lakes / Seneca Lake'},{label:'Tasting',val:'Three distinct tasting rooms'},{label:'Options',val:'Wine, cider, and craft beer'},{label:'Vibe',val:'Family-friendly, scenic lakeside'}],
+    tip:'🍷 Try the Riesling — the Finger Lakes is Riesling country. Some of the best in North America.',
+    website:'https://www.3brotherswinery.com', maps:'https://maps.google.com/?q=Three+Brothers+Winery+623+Lerch+Rd+Geneva+NY',
+    id:'3bros', pts:20
+  },
+  'watkins': {
+    icon:'💧', title:'Watkins Glen State Park', time:'2:00 – 4:00 PM · Wed Jul 29',
+    desc:"One of New York's most spectacular gorge hikes. Watkins Glen's Gorge Trail winds through a dramatic 400-foot-deep gorge past 19 waterfalls, carved by glacial meltwater at the end of the last ice age.",
+    details:[{label:'Highlight',val:'Gorge Trail — 19 waterfalls'},{label:'Length',val:'~1.5 miles one-way'},{label:'Difficulty',val:'Moderate — lots of stone steps'},{label:'Tip',val:'Wear shoes you don\'t mind getting wet'}],
+    tip:'💧 You WILL get misted by the waterfalls — it\'s part of the fun. Don\'t wear white.',
+    website:'https://parks.ny.gov/parks/watkinsglen', maps:'https://maps.google.com/?q=Watkins+Glen+State+Park+Watkins+Glen+NY',
+    id:'watkins', pts:30
+  },
+  'hornblower': {
+    icon:'🚢', title:'Hornblower Niagara Cruises', time:'~12:00 PM · Thu Jul 30',
+    desc:"The classic Niagara Falls boat tour — you cruise right up to the base of Horseshoe Falls and American Falls, close enough to feel the mist and hear the thunder of 6 million cubic feet of water per minute crashing down.",
+    details:[{label:'Tour',val:'Hornblower / Niagara City Cruises'},{label:'Duration',val:'~20 minutes'},{label:'Note',val:'Ponchos provided — you WILL get wet'},{label:'Best view',val:'Horseshoe Falls from the water'}],
+    tip:'💦 Leave anything you don\'t want soaked on the bus. The ponchos help but you\'re still getting wet.',
+    website:'https://www.niagaracruises.com', maps:'https://maps.google.com/?q=Niagara+City+Cruises+5920+Niagara+Pkwy+Niagara+Falls+ON',
+    id:'hornblower', pts:40
+  },
+  'cliftonhill': {
+    icon:'🎡', title:'Clifton Hill', time:'6:00 – 8:00 PM · Thu Jul 30',
+    desc:"Niagara Falls' version of a boardwalk entertainment strip — packed with midway games, haunted houses, miniature golf, wax museums, and a Ferris wheel with views of the falls. Pure family fun chaos.",
+    details:[{label:'Location',val:'Clifton Hill, Niagara Falls, ON'},{label:'Vibe',val:'"Las Vegas for Kids"'},{label:'Highlights',val:'Ferris wheel, arcade games, wax museum'},{label:'Dinner',val:'Plenty of restaurants on the strip'}],
+    tip:'🎡 The Niagara SkyWheel gives great falls views at night. Worth the wait.',
+    website:'https://www.cliftonhill.com', maps:'https://maps.google.com/?q=Clifton+Hill+Niagara+Falls+ON',
+    id:'cliftonhill', pts:20
+  },
+  'cleveland-evening': {
+    icon:'🎸', title:'Explore Cleveland', time:'Evening · Fri Jul 31',
+    desc:"Cleveland punches above its weight as a destination. The Rock & Roll Hall of Fame is world-class. The West Side Market is a 100-year-old covered market hall. And the Lake Erie waterfront has come a long way.",
+    details:[{label:'Rock Hall',val:'Rock & Roll Hall of Fame — budget 3–4 hrs'},{label:'West Side Market',val:'Historic market hall, closes early'},{label:'Waterfront',val:'Lake Erie, Voinovich Bicentennial Park'},{label:'Hotel',val:'Hilton Cleveland Downtown is right downtown'}],
+    tip:'🎸 The Rock Hall is genuinely excellent — plan to spend a good chunk of the evening there.',
+    website:'https://www.rockhall.com', maps:'https://maps.google.com/?q=Rock+and+Roll+Hall+of+Fame+1100+Rock+and+Roll+Blvd+Cleveland+OH',
+    id:'cleveland-evening', pts:20
+  },
+};
+
+// ── DRAWER ───────────────────────────────────────────────────────
+function openDrawer(id) {
+  const a = ACTIVITIES[id];
+  if (!a) return;
+  const checked = !!state.checked[id];
+  const btnHtml = `<button class="drawer-checkin-btn ${checked ? 'done' : ''}" onclick="checkinFromDrawer('${id}',${a.pts})">${checked ? '✓ Checked In!' : `Check In +${a.pts} pts`}</button>`;
+  const detailsHtml = a.details.map(d => `<div class="drawer-detail"><div class="drawer-detail-label">${d.label}</div><div class="drawer-detail-val">${d.val}</div></div>`).join('');
+  const linksHtml = (a.website || a.maps) ? `
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      ${a.website ? `<a href="${a.website}" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);text-decoration:none;padding:10px;border-radius:10px;font-size:0.8rem;font-weight:700;">🌐 Website</a>` : ''}
+      ${a.maps ? `<a href="${a.maps}" target="_blank" rel="noopener" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.3);color:#a5b4fc;text-decoration:none;padding:10px;border-radius:10px;font-size:0.8rem;font-weight:700;">📍 Maps</a>` : ''}
+    </div>` : '';
+  document.getElementById('drawer-inner').innerHTML = `
+    <div class="drawer-icon">${a.icon}</div>
+    <div class="drawer-title">${a.title}</div>
+    <div class="drawer-time">${a.time}</div>
+    <div class="drawer-desc">${a.desc}</div>
+    ${detailsHtml}
+    <div class="drawer-tip">${a.tip}</div>
+    ${linksHtml}
+    ${btnHtml}
+  `;
+  document.getElementById('activity-drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDrawer() {
+  document.getElementById('activity-drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function checkinFromDrawer(id, pts) {
+  checkin(id, id, pts);
+  const btn = document.querySelector('.drawer-checkin-btn');
+  if (btn) { btn.classList.add('done'); btn.textContent = '✓ Checked In!'; }
+}
+
+// ── NAV ──────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  const tabs = ['home','itinerary','map','game','ideas'];
+  document.querySelectorAll('.tab-btn')[tabs.indexOf(id)].classList.add('active');
+  updateUI();
+  if (id === 'map') setTimeout(initMap, 50);
+}
+
+// ── CITY OVERVIEW DATA ───────────────────────────────────────────
+const CITIES = {
+  nyc: {
+    emoji: '🗽', name: 'New York City', dates: 'July 25–27 · 3 nights',
+    hotel: '🏨 Tempo by Hilton Times Square',
+    desc: 'Three packed days in the city — Broadway, iconic views, world-class food, and all the classics.',
+    bg: 'linear-gradient(135deg,#0f2a4a,#0f172a)',
+    days: [
+      { idx: 0, label: 'Day 1 — Saturday Jul 25', subtitle: 'Arrival day', emoji: '✈️',
+        activities: [
+          { name: 'Liberty Bagels', type: 'food' },
+          { name: 'Central Park Pedicab', type: 'confirmed' },
+          { name: 'Top of the Rock', type: 'confirmed' },
+          { name: 'Hotel Check-In 4pm', type: '' },
+        ]
+      },
+      { idx: 1, label: 'Day 2 — Sunday Jul 26', subtitle: 'Broadway day', emoji: '🎭',
+        activities: [
+          { name: "Carmine's Lunch", type: 'food' },
+          { name: 'The Outsiders (Broadway)', type: 'confirmed' },
+          { name: 'Empire State Building', type: '' },
+        ]
+      },
+      { idx: 2, label: 'Day 3 — Monday Jul 27', subtitle: 'Downtown & history', emoji: '🗽',
+        activities: [
+          { name: "Bubby's Brunch", type: 'food' },
+          { name: 'Statue of Liberty & Ellis Island', type: '' },
+          { name: '9/11 Memorial & Museum', type: '' },
+          { name: 'Yankee Stadium Tour', type: '' },
+        ]
+      },
+    ]
+  },
+  cooperstown: {
+    emoji: '⚾', name: 'Cooperstown', dates: 'Tuesday Jul 28 · day trip en route',
+    hotel: '🚗 Drive day — Avis pickup 8am',
+    desc: 'Road trip kicks off! Pick up the rental car and drive 3h 45m to the most sacred ground in baseball.',
+    bg: 'linear-gradient(135deg,#1a2a0a,#0f172a)',
+    days: [
+      { idx: 3, label: 'Day 4 — Tuesday Jul 28', subtitle: 'Road trip begins', emoji: '🚗',
+        activities: [
+          { name: 'Pick Up Rental Car (Avis)', type: 'confirmed' },
+          { name: 'Drive to Cooperstown (3h 45m)', type: '' },
+          { name: 'Baseball Hall of Fame', type: '' },
+          { name: 'Drive to Finger Lakes (~1hr)', type: '' },
+          { name: 'Bellhurst Castle Check-In', type: 'confirmed' },
+        ]
+      },
+    ]
+  },
+  fingerlakes: {
+    emoji: '🍷', name: 'Finger Lakes', dates: 'July 28–30 · 2 nights at Bellhurst Castle',
+    hotel: '🏰 Bellhurst Castle & Winery, Geneva NY',
+    desc: 'Stunning castle on Seneca Lake, world-class Riesling, and one of New York\'s most spectacular gorge hikes.',
+    bg: 'linear-gradient(135deg,#1a0a2e,#0f172a)',
+    days: [
+      { idx: 3, label: 'Day 4 — Tuesday Jul 28', subtitle: 'Arrival evening', emoji: '🏰',
+        activities: [
+          { name: 'Bellhurst Castle Check-In 3pm', type: 'confirmed' },
+          { name: 'Dinner (Ommegang or Edgar\'s)', type: 'food' },
+        ]
+      },
+      { idx: 4, label: 'Day 5 — Wednesday Jul 29', subtitle: 'Wine & waterfalls', emoji: '💧',
+        activities: [
+          { name: 'Three Brothers Winery', type: '' },
+          { name: 'Watkins Glen State Park', type: '' },
+        ]
+      },
+    ]
+  },
+  niagara: {
+    emoji: '💦', name: 'Niagara Falls', dates: 'Thursday Jul 30 · 1 night',
+    hotel: '🏨 Hilton Niagara Falls / Fallsview',
+    desc: 'The thundering falls, a boat ride right into the mist, and a boardwalk built for families.',
+    bg: 'linear-gradient(135deg,#0a1a2e,#0f172a)',
+    days: [
+      { idx: 5, label: 'Day 6 — Thursday Jul 30', subtitle: 'Falls day', emoji: '🚢',
+        activities: [
+          { name: 'Hornblower Niagara Cruise', type: '' },
+          { name: 'Hotel Check-In 4pm', type: 'confirmed' },
+          { name: 'Clifton Hill (evening)', type: '' },
+        ]
+      },
+    ]
+  },
+  cleveland: {
+    emoji: '🎸', name: 'Cleveland', dates: 'Friday Jul 31 · 1 night',
+    hotel: '🏨 Hilton Cleveland Downtown',
+    desc: 'The Rock & Roll Hall of Fame, Lake Erie waterfront, and a great night before the drive home.',
+    bg: 'linear-gradient(135deg,#1a0a0a,#0f172a)',
+    days: [
+      { idx: 6, label: 'Day 7 — Friday Jul 31', subtitle: 'Rock & roll', emoji: '🎸',
+        activities: [
+          { name: 'Drive from Niagara (~2.5hr)', type: '' },
+          { name: 'Hotel Check-In 4pm', type: 'confirmed' },
+          { name: 'Rock & Roll Hall of Fame', type: '' },
+          { name: 'West Side Market / Waterfront', type: '' },
+        ]
+      },
+    ]
+  },
+};
+
+function showCityOverview(cityKey) {
+  const city = CITIES[cityKey];
+  if (!city) return;
+  showPage('itinerary');
+  document.getElementById('itinerary-main').style.display = 'none';
+  const ov = document.getElementById('city-overview');
+  ov.classList.add('active');
+
+  const daysHtml = city.days.map(d => `
+    <div class="day-card" onclick="drillToDay(${d.idx})">
+      <div class="day-card-header">
+        <div>
+          <div class="day-card-title">${d.emoji} ${d.label}</div>
+          <div class="day-card-date">${d.subtitle}</div>
+        </div>
+        <div class="day-card-arrow">›</div>
+      </div>
+      <div class="day-card-hotel">${city.hotel}</div>
+      <div class="day-card-activities">
+        ${d.activities.map(a => `<span class="act-chip ${a.type}">${a.name}</span>`).join('')}
+      </div>
+    </div>`).join('');
+
+  document.getElementById('city-overview-content').innerHTML = `
+    <div class="city-hero" style="background:${city.bg};">
+      <div style="font-size:2.2rem;margin-bottom:6px;">${city.emoji}</div>
+      <h2>${city.name}</h2>
+      <div style="font-size:0.78rem;color:var(--accent);font-weight:600;margin-bottom:8px;">${city.dates}</div>
+      <p>${city.desc}</p>
+    </div>
+    <div class="section-label">Choose a Day</div>
+    ${daysHtml}
+  `;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function drillToDay(idx) {
+  document.getElementById('city-overview').classList.remove('active');
+  document.getElementById('itinerary-main').style.display = '';
+  showDay(idx);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function closeCityOverview() {
+  document.getElementById('city-overview').classList.remove('active');
+  document.getElementById('itinerary-main').style.display = '';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── DAY SELECTOR ─────────────────────────────────────────────────
+function goToDay(idx) {
+  showPage('itinerary');
+  showDay(idx);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showDay(idx) {
+  document.querySelectorAll('.day-chip').forEach((c,i) => c.classList.toggle('active', i===idx));
+  document.querySelectorAll('.day-panel').forEach((p,i) => p.classList.toggle('active', i===idx));
+}
+
+// ── CHECK IN ─────────────────────────────────────────────────────
+function checkin(id, label, pts) {
+  if (state.checked[id]) return;
+  state.checked[id] = true;
+  state.pts += pts;
+  save();
+  const btn = document.getElementById('btn-' + id);
+  if (btn) { btn.classList.add('done'); btn.textContent = '✓ Checked In!'; }
+  showPointsPop(pts);
+  checkBadges();
+  updateUI();
+}
+
+function showPointsPop(pts) {
+  const el = document.getElementById('points-pop');
+  el.textContent = '+' + pts + ' pts!';
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
+// ── CHALLENGES ───────────────────────────────────────────────────
+function completeChallenge(id, label, pts) {
+  if (state.challenges[id]) return;
+  state.challenges[id] = true;
+  state.pts += pts;
+  save();
+  const card = document.getElementById('ch-' + id);
+  if (card) { card.classList.add('done'); card.innerHTML += '<div class="challenge-check">✓</div>'; }
+  showPointsPop(pts);
+  showToast('Challenge complete: ' + label + '!');
+  checkBadges();
+  updateUI();
+}
+
+// ── BADGES ───────────────────────────────────────────────────────
+const BADGE_RULES = {
+  'explorer':    () => Object.keys(state.checked).length >= 5,
+  'foodie':      () => ['carmines','bubbys','bagels','lunch-mid','dinner-d1','dinner-d2','dinner-d3'].filter(k => state.checked[k]).length >= 3,
+  'historian':   () => state.checked['hof'] && state.checked['911'],
+  'nature':      () => state.checked['watkins'] || state.checked['hornblower'],
+  'broadway':    () => state.checked['outsiders'],
+  'sports':      () => state.checked['yankees'] || state.checked['hof'],
+  'roadtripper': () => state.checked['rental-car'] && Object.keys(state.checked).length >= 8,
+  'champion':    () => state.pts >= 300,
+};
+
+function checkBadges() {
+  for (const [id, rule] of Object.entries(BADGE_RULES)) {
+    if (!earnedBadges[id] && rule()) {
+      earnedBadges[id] = true;
+      localStorage.setItem(STATE_KEY + '-badges', JSON.stringify(earnedBadges));
+      const el = document.getElementById('badge-' + id);
+      if (el) el.classList.replace('locked','unlocked');
+      showToast('Badge unlocked: ' + id.charAt(0).toUpperCase() + id.slice(1) + '! 🏅');
+    }
+  }
+}
+
+// ── SUGGESTIONS ──────────────────────────────────────────────────
+function submitSuggestion() {
+  const name = document.getElementById('sug-name').value.trim();
+  const place = document.getElementById('sug-place').value.trim();
+  const day = document.getElementById('sug-day').value;
+  const note = document.getElementById('sug-note').value.trim();
+  if (!name || !place) { showToast('Please enter your name and a place!'); return; }
+  const s = { name, place, day: day || 'Anywhere', note, ts: Date.now() };
+  suggestions.push(s);
+  localStorage.setItem(STATE_KEY + '-suggestions', JSON.stringify(suggestions));
+  document.getElementById('sug-name').value = '';
+  document.getElementById('sug-place').value = '';
+  document.getElementById('sug-day').value = '';
+  document.getElementById('sug-note').value = '';
+  renderSuggestions();
+  showToast('Suggestion submitted! 🚀');
+  setTimeout(() => showIdeasPanel('submitted'), 800);
+}
+
+function renderSuggestions() {
+  const el = document.getElementById('suggestions-list');
+  const empty = document.getElementById('no-suggestions');
+  if (!el) return;
+  if (!suggestions.length) {
+    el.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  el.innerHTML = '<div class="section-label" style="margin-top:0">Family Suggestions (' + suggestions.length + ')</div>' +
+    suggestions.slice().reverse().map(s => `
+      <div class="suggestion-item">
+        <div class="si-day">${s.day}</div>
+        <div class="si-name">${s.place}</div>
+        ${s.note ? `<div class="si-note">${s.note}</div>` : ''}
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:4px;">— ${s.name}</div>
+      </div>`).join('');
+}
+
+// ── UPDATE UI ────────────────────────────────────────────────────
+function updateUI() {
+  const pts = state.pts;
+  const checked = Object.keys(state.checked).length;
+  const challenges = Object.keys(state.challenges).length;
+  const badges = Object.keys(earnedBadges).length;
+
+  document.getElementById('home-pts').textContent = pts;
+  document.getElementById('home-acts').textContent = checked;
+  document.getElementById('home-badges').textContent = badges;
+  document.getElementById('home-challenges').textContent = challenges + '/12';
+
+  document.getElementById('game-pts').textContent = pts;
+  const levelFill = Math.min(100, (pts / 500) * 100);
+  document.getElementById('level-fill').style.width = levelFill + '%';
+  let level = 'Level 1 Explorer';
+  if (pts >= 400) level = 'Level 5 Legend 🏆';
+  else if (pts >= 300) level = 'Level 4 Champion 🥇';
+  else if (pts >= 200) level = 'Level 3 Adventurer 🌟';
+  else if (pts >= 100) level = 'Level 2 Traveler ✈️';
+  document.getElementById('level-label').textContent = level;
+
+  for (const [id] of Object.entries(state.checked)) {
+    const btn = document.getElementById('btn-' + id);
+    if (btn) { btn.classList.add('done'); btn.textContent = '✓ Checked In!'; }
+  }
+  for (const [id] of Object.entries(state.challenges)) {
+    const card = document.getElementById('ch-' + id);
+    if (card && !card.querySelector('.challenge-check')) {
+      card.classList.add('done');
+      card.innerHTML += '<div class="challenge-check">✓</div>';
+    }
+  }
+  for (const [id] of Object.entries(earnedBadges)) {
+    const el = document.getElementById('badge-' + id);
+    if (el) el.classList.replace('locked','unlocked');
+  }
+}
+
+// ── COUNTDOWN ────────────────────────────────────────────────────
+function updateCountdown() {
+  const depart = new Date('2026-07-25T07:20:00');
+  const now = new Date();
+  const diff = depart - now;
+  const el = document.getElementById('countdown-num');
+  if (diff <= 0) { el.textContent = "We're off! 🎉"; return; }
+  el.textContent = Math.floor(diff / (1000*60*60*24));
+}
+
+// ── WIRE UP ACTIVITY DRAWERS & CHECK-IN BUTTONS ──────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  // Wire check-in buttons
+  document.querySelectorAll('.checkin-btn[id]').forEach(btn => {
+    const evId = btn.id.replace('btn-', '');
+    // Find pts from ACTIVITIES map or fall back to text parse
+    const a = ACTIVITIES[evId];
+    const pts = a ? a.pts : parseInt((btn.textContent.match(/\+(\d+)/) || [0,0])[1]);
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      checkin(evId, evId, pts);
+    });
+  });
+
+  // Wire event cards to open drawer
+  document.querySelectorAll('.event-body[id]').forEach(el => {
+    const id = el.id.replace('ev-', '');
+    if (ACTIVITIES[id]) {
+      // Add a small hint
+      const hint = document.createElement('div');
+      hint.style.cssText = 'font-size:0.62rem;color:var(--muted);margin-top:6px;opacity:0.7;';
+      hint.textContent = '▸ Tap for details';
+      el.appendChild(hint);
+      el.addEventListener('click', e => {
+        if (e.target.classList.contains('checkin-btn') || e.target.closest('.checkin-btn')) return;
+        openDrawer(id);
+      });
+    }
+  });
+});
+
+// ── MAP ──────────────────────────────────────────────────────────
+const STOPS = [
+  { num:1, emoji:'🏠', name:'Indianapolis, IN', sub:'Fly out · Sat Jul 25',      lat:39.7684, lng:-86.1581 },
+  { num:2, emoji:'🗽', name:'New York City',     sub:'Jul 25–28 · Tempo by Hilton Times Square', lat:40.7580, lng:-73.9855 },
+  { num:3, emoji:'⚾', name:'Cooperstown, NY',   sub:'Jul 28 · Baseball Hall of Fame',            lat:42.7003, lng:-74.9242 },
+  { num:4, emoji:'🍷', name:'Finger Lakes, NY',  sub:'Jul 28–30 · Bellhurst Castle & Winery',     lat:42.8712, lng:-76.9939 },
+  { num:5, emoji:'💦', name:'Niagara Falls, ON', sub:'Jul 30–31 · Hilton Fallsview',              lat:43.0896, lng:-79.0849 },
+  { num:6, emoji:'🎸', name:'Cleveland, OH',     sub:'Jul 31–Aug 1 · Hilton Cleveland Downtown',  lat:41.4993, lng:-81.6944 },
+  { num:7, emoji:'🏠', name:'Indianapolis, IN',  sub:'Home! · Sat Aug 1',                         lat:39.7684, lng:-86.1581 },
+];
+
+let mapInited = false;
+function initMap() {
+  if (mapInited) return;
+  mapInited = true;
+
+  const map = L.map('trip-map', { zoomControl: true }).setView([41.5, -78], 5);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap contributors © CARTO',
+    maxZoom: 19
+  }).addTo(map);
+
+  // Route line
+  const latlngs = STOPS.map(s => [s.lat, s.lng]);
+  L.polyline(latlngs, { color: '#38bdf8', weight: 2.5, opacity: 0.7, dashArray: '6 6' }).addTo(map);
+
+  // Markers
+  STOPS.forEach((s, i) => {
+    const icon = L.divIcon({
+      className: '',
+      html: `<div style="background:#1e293b;border:2px solid #38bdf8;border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,0.5);">${s.emoji}</div>`,
+      iconSize: [32, 32],
+      iconAnchor: [16, 16],
+      popupAnchor: [0, -18],
+    });
+    L.marker([s.lat, s.lng], { icon })
+      .addTo(map)
+      .bindPopup(`<div style="font-family:-apple-system,sans-serif;min-width:140px;"><div style="font-weight:800;font-size:0.9rem;margin-bottom:2px;">${s.emoji} ${s.name}</div><div style="font-size:0.75rem;color:#64748b;">${s.sub}</div></div>`, { maxWidth: 220 });
+  });
+}
+
+// ── IDEAS PANELS ─────────────────────────────────────────────────
+function showIdeasPanel(id) {
+  document.querySelectorAll('.ideas-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ideas-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('ideas-panel-' + id).classList.add('active');
+  const tabs = ['nearby','suggest','submitted'];
+  document.querySelectorAll('.ideas-tab')[tabs.indexOf(id)].classList.add('active');
+  if (id === 'submitted') renderSuggestions();
+}
+
+// ── NEARBY ───────────────────────────────────────────────────────
+const FOOD_CATS = [
+  { icon:'🍕', label:'Pizza', sub:'Slice shops & pizza joints', q:'pizza' },
+  { icon:'🍔', label:'Burgers', sub:'Casual & gourmet', q:'burgers' },
+  { icon:'🍣', label:'Sushi', sub:'Japanese restaurants', q:'sushi restaurant' },
+  { icon:'🍦', label:'Ice Cream', sub:'Scoops & soft serve', q:'ice cream' },
+  { icon:'☕', label:'Coffee & Cafés', sub:'Morning fuel', q:'coffee cafe' },
+  { icon:'🥞', label:'Breakfast & Brunch', sub:'Morning favorites', q:'breakfast brunch' },
+  { icon:'🍺', label:'Bars & Breweries', sub:'Local craft beer', q:'brewery bar' },
+  { icon:'🍝', label:'Italian', sub:'Pasta, pizza & more', q:'Italian restaurant' },
+];
+const ACTIVITY_CATS = [
+  { icon:'🎢', label:'Amusement', sub:'Rides & attractions', q:'amusement park attractions' },
+  { icon:'🏊', label:'Pools & Water', sub:'Splash & swim', q:'water park pool' },
+  { icon:'🎳', label:'Bowling', sub:'Family fun', q:'bowling alley' },
+  { icon:'🎮', label:'Arcade & Games', sub:'Games & laser tag', q:'arcade games laser tag' },
+  { icon:'🎭', label:'Shows & Events', sub:'Live entertainment', q:'shows live entertainment' },
+  { icon:'🚴', label:'Bike & Outdoors', sub:'Trails & rentals', q:'bike rental outdoor activities' },
+  { icon:'🛍️', label:'Shopping', sub:'Malls & boutiques', q:'shopping mall' },
+  { icon:'🎨', label:'Arts & Culture', sub:'Museums & galleries', q:'museum art gallery' },
+];
+const SIGHT_CATS = [
+  { icon:'🏛️', label:'Landmarks', sub:'Historic sites', q:'historic landmark' },
+  { icon:'🌳', label:'Parks & Nature', sub:'Hiking & scenery', q:'park nature trail' },
+  { icon:'🚢', label:'Boat Tours', sub:'On the water', q:'boat tour cruise' },
+  { icon:'📸', label:'Photo Spots', sub:'Iconic backdrops', q:'scenic viewpoint photo spot' },
+];
+
+let nearbyLoc = null;
+
+function buildCatGrid(containerId, cats) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = cats.map(c => `
+    <a class="cat-btn" href="https://www.google.com/maps/search/${encodeURIComponent(c.q + ' near ' + nearbyLoc)}" target="_blank" rel="noopener">
+      <span class="cat-icon">${c.icon}</span>
+      <span class="cat-label">${c.label}</span>
+      <span class="cat-sub">${c.sub}</span>
+    </a>`).join('');
+}
+
+function setNearbyLocation(loc) {
+  nearbyLoc = loc;
+  document.getElementById('nearby-loc-label').textContent = loc;
+  document.getElementById('nearby-stops').style.display = 'none';
+  document.getElementById('nearby-categories').style.display = 'block';
+  buildCatGrid('cat-grid-food', FOOD_CATS);
+  buildCatGrid('cat-grid-activities', ACTIVITY_CATS);
+  buildCatGrid('cat-grid-sights', SIGHT_CATS);
+}
+
+function resetNearbyLocation() {
+  nearbyLoc = null;
+  document.getElementById('nearby-stops').style.display = 'flex';
+  document.getElementById('nearby-stops').style.flexDirection = 'column';
+  document.getElementById('nearby-categories').style.display = 'none';
+}
+
+function useMyLocation() {
+  if (!navigator.geolocation) { showToast('Location not supported on this browser'); return; }
+  showToast('Detecting your location…');
+  navigator.geolocation.getCurrentPosition(pos => {
+    const loc = pos.coords.latitude.toFixed(4) + ',' + pos.coords.longitude.toFixed(4);
+    setNearbyLocation(loc);
+    document.getElementById('nearby-loc-label').textContent = '📡 Your current location';
+  }, () => showToast('Could not detect location — pick a stop above'));
+}
+
+// ── SCAVENGER HUNT ───────────────────────────────────────────────
+const SCAV = {
+  road: [
+    { id:'sv-license',  emoji:'🪪', label:'License plate from 10+ states', pts:15 },
+    { id:'sv-billboard',emoji:'📢', label:'Funny billboard', pts:5 },
+    { id:'sv-cows',     emoji:'🐄', label:'Cows in a field', pts:5 },
+    { id:'sv-silo',     emoji:'🌾', label:'Grain silo', pts:5 },
+    { id:'sv-barn',     emoji:'🏚️', label:'Red barn', pts:5 },
+    { id:'sv-rainbow',  emoji:'🌈', label:'Rainbow', pts:20 },
+    { id:'sv-semitruck',emoji:'🚛', label:'Semi truck with a cool design', pts:5 },
+    { id:'sv-rest-stop',emoji:'🛣️', label:'Rest stop', pts:5 },
+    { id:'sv-rv',       emoji:'🚌', label:'RV or camper', pts:5 },
+    { id:'sv-tunnel',   emoji:'🚇', label:'Drive through a tunnel', pts:10 },
+    { id:'sv-bridge',   emoji:'🌉', label:'Drive over a big bridge', pts:10 },
+    { id:'sv-toll',     emoji:'🛂', label:'Pay a toll', pts:5 },
+    { id:'sv-hay',      emoji:'🌀', label:'Round hay bale', pts:5 },
+    { id:'sv-deer',     emoji:'🦌', label:'Deer near the road', pts:10 },
+    { id:'sv-flagcar',  emoji:'🏳️', label:'Car with a flag', pts:5 },
+    { id:'sv-punchbug', emoji:'🚗', label:'VW Bug (punch bug!)', pts:10 },
+    { id:'sv-traintrack',emoji:'🚂', label:'Train crossing', pts:10 },
+    { id:'sv-stateline', emoji:'🪧', label:'State line sign', pts:10 },
+  ],
+  airport: [
+    { id:'sv-moving-walk', emoji:'🚶', label:'Moving walkway', pts:5 },
+    { id:'sv-cartpush',    emoji:'🛒', label:'Luggage cart pile-up', pts:5 },
+    { id:'sv-uniformed',   emoji:'👮', label:'Uniformed pilot or crew', pts:5 },
+    { id:'sv-tsa',         emoji:'🔍', label:'Get through TSA fast', pts:10 },
+    { id:'sv-bigplane',    emoji:'✈️', label:'Double-decker plane', pts:15 },
+    { id:'sv-winged',      emoji:'🪟', label:'Window seat view', pts:5 },
+    { id:'sv-turbulence',  emoji:'😬', label:'Survive turbulence', pts:10 },
+    { id:'sv-clouds',      emoji:'☁️', label:'See clouds from above', pts:5 },
+    { id:'sv-cityabove',   emoji:'🌆', label:'See a city from the air', pts:10 },
+    { id:'sv-delay',       emoji:'⏱️', label:'Spot a delayed flight board', pts:5 },
+    { id:'sv-loudkid',     emoji:'👶', label:'Crying baby on the plane (you survive!)', pts:10 },
+    { id:'sv-airportfood', emoji:'🍔', label:'Overpriced airport food', pts:5 },
+  ],
+  nature: [
+    { id:'sv-waterfall',   emoji:'💧', label:'Waterfall', pts:15 },
+    { id:'sv-bald-eagle',  emoji:'🦅', label:'Bald eagle', pts:25 },
+    { id:'sv-heron',       emoji:'🐦', label:'Blue heron', pts:15 },
+    { id:'sv-chipmunk',    emoji:'🐿️', label:'Chipmunk', pts:10 },
+    { id:'sv-hawk',        emoji:'🦆', label:'Hawk or bird of prey', pts:15 },
+    { id:'sv-lake',        emoji:'🏞️', label:'Beautiful lake view', pts:10 },
+    { id:'sv-wildflower',  emoji:'🌸', label:'Field of wildflowers', pts:10 },
+    { id:'sv-fog',         emoji:'🌫️', label:'Foggy morning', pts:10 },
+    { id:'sv-sunset',      emoji:'🌅', label:'Epic sunset', pts:15 },
+    { id:'sv-bigrock',     emoji:'🪨', label:'Giant rock formation', pts:10 },
+    { id:'sv-gorge',       emoji:'🏔️', label:'Gorge or canyon', pts:15 },
+    { id:'sv-turtle',      emoji:'🐢', label:'Turtle in the wild', pts:15 },
+    { id:'sv-firefly',     emoji:'✨', label:'Firefly at night', pts:20 },
+    { id:'sv-fullmoon',    emoji:'🌕', label:'Full or near-full moon', pts:15 },
+    { id:'sv-doubrainbow', emoji:'🌈', label:'Double rainbow', pts:30 },
+  ],
+  city: [
+    { id:'sv-subway',    emoji:'🚇', label:'NYC Subway', pts:5 },
+    { id:'sv-hotdog',    emoji:'🌭', label:'Street hot dog cart', pts:5 },
+    { id:'sv-yellowcab', emoji:'🚕', label:'Yellow taxi cab', pts:5 },
+    { id:'sv-celeb',     emoji:'🌟', label:'Think you spotted a celebrity', pts:20 },
+    { id:'sv-musician',  emoji:'🎷', label:'Street musician', pts:5 },
+    { id:'sv-foodtruck', emoji:'🚚', label:'Food truck', pts:5 },
+    { id:'sv-skyscraper',emoji:'🏢', label:'Skyscraper over 50 floors', pts:5 },
+    { id:'sv-protest',   emoji:'📣', label:'Someone with a sign', pts:10 },
+    { id:'sv-firetruck', emoji:'🚒', label:'Fire truck with sirens', pts:10 },
+    { id:'sv-graffiti',  emoji:'🎨', label:'Cool graffiti mural', pts:5 },
+    { id:'sv-pretzel',   emoji:'🥨', label:'Eat a NYC pretzel', pts:10 },
+    { id:'sv-neonSign',  emoji:'💡', label:'Giant neon sign', pts:5 },
+    { id:'sv-horse',     emoji:'🐴', label:'Police horse', pts:10 },
+    { id:'sv-pigeon',    emoji:'🐦', label:'Pigeon eating pizza', pts:15 },
+    { id:'sv-tourist',   emoji:'📸', label:'Tourist taking a selfie on a stick', pts:5 },
+    { id:'sv-dogwalk',   emoji:'🐕', label:'Someone walking 3+ dogs', pts:10 },
+  ],
+  hotel: [
+    { id:'sv-minibar',  emoji:'🧴', label:'Fancy mini shampoo collection', pts:5 },
+    { id:'sv-mint',     emoji:'🍬', label:'Mint on the pillow', pts:10 },
+    { id:'sv-robe',     emoji:'🩱', label:'Wear the hotel robe', pts:10 },
+    { id:'sv-elevator', emoji:'🛗', label:'Get the elevator alone', pts:10 },
+    { id:'sv-poolhot',  emoji:'♨️', label:'Hot tub or heated pool', pts:10 },
+    { id:'sv-roomserv', emoji:'🛎️', label:'See room service cart in hallway', pts:5 },
+    { id:'sv-topfloor', emoji:'🏙️', label:'Room on the top 5 floors', pts:15 },
+    { id:'sv-viewroom', emoji:'🌃', label:'Room with a great view', pts:15 },
+    { id:'sv-donotdist',emoji:'🚫', label:'Hang the "Do Not Disturb" sign', pts:5 },
+    { id:'sv-castleroom',emoji:'🏰', label:'Stay in an actual castle room', pts:25 },
+  ],
+  rare: [
+    { id:'sv-tripleplate',emoji:'🔢', label:'License plate ABC-123 pattern', pts:15 },
+    { id:'sv-carbreakdown',emoji:'🆘', label:'Car broken down on the side', pts:10 },
+    { id:'sv-bear',      emoji:'🐻', label:'Bear sighting', pts:50 },
+    { id:'sv-moose',     emoji:'🫎', label:'Moose sighting', pts:40 },
+    { id:'sv-fox',       emoji:'🦊', label:'Fox sighting', pts:25 },
+    { id:'sv-shooting',  emoji:'🌠', label:'Shooting star', pts:30 },
+    { id:'sv-wedding',   emoji:'💒', label:'Wedding party spotted', pts:20 },
+    { id:'sv-famous',    emoji:'🎬', label:'Film crew or movie shoot', pts:30 },
+    { id:'sv-whitesquirrel',emoji:'🐿️', label:'White squirrel', pts:40 },
+    { id:'sv-proposing', emoji:'💍', label:'Witness someone proposing', pts:35 },
+  ],
+};
+
+let scavState = JSON.parse(localStorage.getItem(STATE_KEY + '-scav') || '{}');
+
+function saveScav() { localStorage.setItem(STATE_KEY + '-scav', JSON.stringify(scavState)); }
+
+function buildScavGrid(containerId, items) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  el.innerHTML = items.map(item => {
+    const found = !!scavState[item.id];
+    return `<div class="scav-item${found ? ' found' : ''}" id="${item.id}" onclick="spotItem('${item.id}')">
+      ${found ? '<span class="scav-found-stamp">✓</span>' : ''}
+      <span class="scav-emoji">${item.emoji}</span>
+      <span class="scav-label">${item.label}</span>
+      <span class="scav-pts">+${item.pts} pts</span>
+    </div>`;
+  }).join('');
+}
+
+function spotItem(id) {
+  if (scavState[id]) return;
+  // Find the item
+  let found;
+  for (const cat of Object.values(SCAV)) {
+    found = cat.find(i => i.id === id);
+    if (found) break;
+  }
+  if (!found) return;
+  scavState[id] = true;
+  state.pts += found.pts;
+  save();
+  saveScav();
+  const el = document.getElementById(id);
+  if (el) {
+    el.classList.add('found');
+    el.innerHTML = `<span class="scav-found-stamp">✓</span><span class="scav-emoji">${found.emoji}</span><span class="scav-label">${found.label}</span><span class="scav-pts">+${found.pts} pts</span>`;
+  }
+  showPointsPop(found.pts);
+  showToast('Spotted: ' + found.label + '!');
+  checkBadges();
+  updateUI();
+}
+
+function initScavenger() {
+  buildScavGrid('scav-road',    SCAV.road);
+  buildScavGrid('scav-airport', SCAV.airport);
+  buildScavGrid('scav-nature',  SCAV.nature);
+  buildScavGrid('scav-city',    SCAV.city);
+  buildScavGrid('scav-hotel',   SCAV.hotel);
+  buildScavGrid('scav-rare',    SCAV.rare);
+}
+
+// ── INIT ─────────────────────────────────────────────────────────
+updateCountdown();
+updateUI();
+checkBadges();
+renderSuggestions();
+initScavenger();
+</script>
+</body>
+</html>
