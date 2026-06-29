@@ -360,6 +360,10 @@
     <div class="playlist-header">
       <div class="playlist-icon">🎵</div>
       <div><div class="playlist-title">New York State of Mind</div><div class="playlist-sub">20 tracks · vibes for the road</div></div>
+      <button id="spotify-toggle" onclick="toggleSpotify()" style="margin-left:auto;background:linear-gradient(135deg,#1db954,#1aa34a);border:none;border-radius:20px;color:#fff;font-size:0.72rem;font-weight:700;padding:6px 12px;cursor:pointer;white-space:nowrap;">▶ Play</button>
+    </div>
+    <div id="spotify-embed" style="display:none;margin-bottom:12px;">
+      <iframe id="spotify-iframe" style="border-radius:12px;width:100%;height:152px;" src="" frameborder="0" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>
     </div>
     <div class="track-list">
       <div class="track"><div class="track-num">1</div><div class="track-info"><div class="track-name">Empire State of Mind</div><div class="track-artist">Jay-Z ft. Alicia Keys</div></div><div class="track-dur">4:37</div></div>
@@ -1828,6 +1832,25 @@ function useMyLocation() {
     setNearbyLocation(loc);
     document.getElementById('nearby-loc-label').textContent = '📡 Your current location';
   }, () => showToast('Could not detect location — pick a stop above'));
+}
+
+// ── SPOTIFY ──────────────────────────────────────────────────────
+function toggleSpotify() {
+  const embed = document.getElementById('spotify-embed');
+  const iframe = document.getElementById('spotify-iframe');
+  const btn = document.getElementById('spotify-toggle');
+  const open = embed.style.display === 'none';
+  if (open) {
+    iframe.src = 'https://open.spotify.com/embed/playlist/5h3pbt3eXCANsaFqISq1yc?utm_source=generator&theme=0';
+    embed.style.display = 'block';
+    btn.textContent = '✕ Close';
+    btn.style.background = 'rgba(255,255,255,0.1)';
+  } else {
+    embed.style.display = 'none';
+    iframe.src = '';
+    btn.textContent = '▶ Play';
+    btn.style.background = 'linear-gradient(135deg,#1db954,#1aa34a)';
+  }
 }
 
 // ── SCAVENGER HUNT ───────────────────────────────────────────────
